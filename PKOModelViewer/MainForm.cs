@@ -19,7 +19,7 @@ namespace PKOModelViewer
 {
     public partial class MainForm : Form
     {
-        enum DrawObjectType { none, lab, lgo, lmo, lxo, character, item,ship };
+        enum DrawObjectType { none, lab, lgo, lmo, lxo, character, item, ship };
 
         object[] drawObject = new object[16];
         DrawObjectType[] drawObjectType = new DrawObjectType[16];
@@ -36,10 +36,11 @@ namespace PKOModelViewer
         string[] lxofiles;
 
         int totaltextures = 0;
-        float rotate = 0;
-        float rotateOffcet = 0;
+        float rotateX = 0;
+        float rotateOffcetX = 0;
+        float rotateY = 0;
+        float rotateOffcetY = 0;
         float scale = 1;
-        float scaleOffcet = 1;
         uint animationTimer = 0;
         bool enableAnimation = false;
         bool playAnimation = true;
@@ -671,9 +672,10 @@ namespace PKOModelViewer
                 if (parentindex == 5)
                 {
                     CItemRecord item = iteminfo[index];
-                    drawNum = 1;
-                    drawObject[0] = item;
-                    drawObjectType[0] = DrawObjectType.item;
+                    drawNum = 0;
+                    DeleteAllTextures();
+                    //drawObject[0] = item;
+                    //drawObjectType[0] = DrawObjectType.item;
 
                     string info = CutString(item.szDataName) + "\n\n";
                     //info += "able link: " + CutString(item.szAbleLink) + "\n";
@@ -688,10 +690,22 @@ namespace PKOModelViewer
                         char[] mdl = new char[19];
                         Array.Copy(item.chModule, i * 19, mdl, 0, 19);
                         if (i == 0) info += "on drop:    " + CutString(mdl) + "\n";
-                        if (i == 1) info += "on Lance:   " + CutString(mdl) + "\n";
-                        if (i == 2) info += "on Carsise: " + CutString(mdl) + "\n";
-                        if (i == 3) info += "on Phyllis: " + CutString(mdl) + "\n";
-                        if (i == 4) info += "on Ami:     " + CutString(mdl) + "\n";
+                        else if (i == 1) info += "on Lance:   " + CutString(mdl) + "\n";
+                        else if (i == 2) info += "on Carsise: " + CutString(mdl) + "\n";
+                        else if (i == 3) info += "on Phyllis: " + CutString(mdl) + "\n";
+                        else if (i == 4) info += "on Ami:     " + CutString(mdl) + "\n";
+
+                        lwGeomObjInfo geom = new lwGeomObjInfo();
+                        string filenameModel = textBox1.Text + "model\\item\\" + CutString(mdl) + ".lgo";
+                        if (item.sType >= 19 && item.sType <= 25) filenameModel = textBox1.Text + "model\\character\\" + CutString(mdl) + ".lgo";
+
+                        if (geom.Load(filenameModel) == 0)
+                        {
+                            LoadTexturesToGeom(ref geom, filenameModel);
+                            drawObject[drawNum] = geom;
+                            drawObjectType[drawNum] = DrawObjectType.item;
+                            drawNum++;
+                        }
                     }
 
                     info += "\nforge lvl: " + (byte)item.chForgeLv + "\n";
@@ -708,18 +722,8 @@ namespace PKOModelViewer
                     pictureBox1.Image = bmp;
                     pictureBox1.Visible = true;
 
-                    lwGeomObjInfo geom = new lwGeomObjInfo();
-                    string filenameModel = textBox1.Text + "model\\item\\" + CutString(item.chModule) + ".lgo";
-                    if (geom.Load(filenameModel) == 0)
-                    {
-                        DeleteAllTextures();
-                        LoadTexturesToGeom(ref geom, filenameModel);
-                        drawObject[0] = geom;
-                        drawObjectType[0] = DrawObjectType.item;
-                        drawNum = 1;
-                        DisableAnimation();
-                        glControl1.Refresh();
-                    }
+                    DisableAnimation();
+                    glControl1.Refresh();
 
                     richTextBox1.Text = info;
                 }
@@ -802,6 +806,8 @@ namespace PKOModelViewer
             GL.MultMatrix(geom.header.mat_local.m);
             for (int j = 0; j < geom.mesh.header.subset_num; j++)
             {
+                if (CutString(geom.mtl_seq[j].tex_seq[0].file_name) == "1.BMP") // 1.bmp - is for weapon effects
+                    continue;
                 GL.BindTexture(TextureTarget.Texture2D, geom.mtl_seq[j].tex_seq[0].data_pointer);
                 GL.Color3(1f, 1f, 1f);
                 GL.Begin(BeginMode.Triangles);
@@ -929,7 +935,7 @@ namespace PKOModelViewer
             }
             GL.End();
         }
-        void DrawObject(object drawObject, DrawObjectType drawObjectType)
+        void DrawObject(object drawObject, DrawObjectType drawObjectType,int id)
         {
             if (drawObjectType == DrawObjectType.ship)
             {
@@ -946,7 +952,16 @@ namespace PKOModelViewer
             {
                 lwGeomObjInfo geom = (lwGeomObjInfo)drawObject;
                 GL.Enable(EnableCap.Texture2D);
+                Random rand = new Random((int)(id * geom.mesh.header.index_num));
+                rand.Next(); rand.Next(); rand.Next(); rand.Next();
+                GL.PushMatrix();
+                if (id == 1) GL.Translate(-1, -1, 0);
+                if (id == 2) GL.Translate(1, -1, 0);
+                if (id == 3) GL.Translate(1, 1, 0);
+                if (id == 4) GL.Translate(-1, 1, 0);
+                GL.Rotate(rand.Next(100), 0, 0, 1);
                 DrawGeom(geom);
+                GL.PopMatrix();
                 GL.Disable(EnableCap.Texture2D);
             }
             if (drawObjectType == DrawObjectType.lgo)
@@ -1005,12 +1020,13 @@ namespace PKOModelViewer
             GL.LoadIdentity();
             Matrix4 camera = Matrix4.LookAt(new Vector3(5, 0, 5), new Vector3(0, 0, 1), new Vector3(0, 0, 1));
             GL.MultMatrix(ref camera);
-            GL.Rotate(rotate + rotateOffcet, 0, 0, 1);
-            GL.Scale(scale * scaleOffcet, scale * scaleOffcet, scale * scaleOffcet);
+            GL.Rotate(rotateY + rotateOffcetY, 0, 1, 0);
+            GL.Rotate(rotateX + rotateOffcetX, 0, 0, 1);
+            GL.Scale(scale, scale, scale);
 
             DrawGrid();
             for (int i = 0; i < drawNum; i++)
-                DrawObject(drawObject[i], drawObjectType[i]);
+                DrawObject(drawObject[i], drawObjectType[i], i);
 
             glControl1.SwapBuffers();
         }
@@ -1047,19 +1063,25 @@ namespace PKOModelViewer
         {
             oldMouseDown.X = 0;
             oldMouseDown.Y = 0;
-            rotate += rotateOffcet;
-            rotateOffcet = 0;
-            scale *= scaleOffcet;
-            scaleOffcet = 1;
+            rotateX += rotateOffcetX;
+            rotateOffcetX = 0;
+            rotateY += rotateOffcetY;
+            rotateOffcetY = 0;
         }
         private void glControl1_MouseMove(object sender, MouseEventArgs e)
         {
-            if (oldMouseDown.X != 0)
+            if (oldMouseDown.X != 0 || oldMouseDown.Y != 0)
             {
-                rotateOffcet = (e.X - oldMouseDown.X);
-                scaleOffcet = (float)Math.Pow(1.2, (-e.Y + oldMouseDown.Y) / 10);
+                rotateOffcetX = (e.X - oldMouseDown.X);
+                rotateOffcetY = (e.Y - oldMouseDown.Y);
                 glControl1.Refresh();
             }
+        }
+        private void glControl_MouseWheel(object sender, MouseEventArgs e)
+        {
+            float scaleOffcet = (float)Math.Pow(1.2, e.Delta / 100.0f);
+            scale *= scaleOffcet;
+            glControl1.Refresh();
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -1112,6 +1134,8 @@ namespace PKOModelViewer
                 textBox1.Text = System.IO.File.ReadAllText("config.txt");
             }
             catch { ;}
+
+            glControl1.MouseWheel += glControl_MouseWheel;
         }
     }
 }
