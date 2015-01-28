@@ -19,16 +19,31 @@ namespace PKOModelViewer
 {
     public partial class MainForm : Form
     {
-        enum DrawObjectType { none, lab, lgo, lmo, lxo };
+        enum DrawObjectType { none, lab, lgo, lmo, lxo, character, item };
 
-        object drawObject = null;
-        DrawObjectType drawObjectType = DrawObjectType.none;
-        int[] textures = new int[128];
+        object[] drawObject = new object[16];
+        DrawObjectType[] drawObjectType = new DrawObjectType[16];
+        int drawNum = 0;
+        int[] textures = new int[1024];
+
+        SortedDictionary<int, int> charinfokeys;
+        SortedDictionary<int, int> iteminfokeys;
+        CChaRecord[] chainfo;
+        CItemRecord[] iteminfo;
+        string[] labfiles;
+        string[] lgofiles;
+        string[] lmofiles;
+        string[] lxofiles;
+
         int totaltextures = 0;
         float rotate = 0;
         float rotateOffcet = 0;
         float scale = 1;
         float scaleOffcet = 1;
+        uint animationTimer=0;
+        bool enableAnimation = false;
+        bool playAnimation = true;
+        bool isValueChangedProgramly=false;
         Point oldMouseDown;
 
         public MainForm()
@@ -38,7 +53,17 @@ namespace PKOModelViewer
 
             if (!FreeImageAPI.FreeImage.IsAvailable()) MessageBox.Show("Need FreeImage.dll");
 
+            int sz = Marshal.SizeOf(typeof(CItemRecord));
+
             InitializeComponent();
+        }
+
+        string CutString(char[] cstr)
+        {
+            int length = 0;
+            while (length < cstr.Length&&cstr[length] != '\0')
+                length++;
+            return new string(cstr, 0, length);
         }
 
         private void buttonSelectFoler_Click(object sender, EventArgs e)
@@ -47,62 +72,96 @@ namespace PKOModelViewer
             {
                 string path = folderBrowserDialog1.SelectedPath + "\\";
                 textBox1.Text = path;
+                System.IO.File.WriteAllText("config.txt", path);
             }
         }
-
         private void buttonFindFiles_Click(object sender, EventArgs e)
         {
-            string[] labfiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lab", System.IO.SearchOption.AllDirectories);
-            string[] lgofiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lgo", System.IO.SearchOption.AllDirectories);
-            string[] lmofiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lmo", System.IO.SearchOption.AllDirectories);
-            string[] lxofiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lxo", System.IO.SearchOption.AllDirectories);
+            charinfokeys = new SortedDictionary<int, int>();
+            iteminfokeys = new SortedDictionary<int, int>();
+            chainfo = CRawDataSet<CChaRecord>.LoadBin(textBox1.Text + "scripts\\table\\Characterinfo.bin");
+            iteminfo = CRawDataSet<CItemRecord>.LoadBin(textBox1.Text + "scripts\\table\\iteminfo.bin");
+            labfiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lab", System.IO.SearchOption.AllDirectories);
+            lgofiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lgo", System.IO.SearchOption.AllDirectories);
+            lmofiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lmo", System.IO.SearchOption.AllDirectories);
+            lxofiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lxo", System.IO.SearchOption.AllDirectories);
+
             TreeNode labNode = new TreeNode("lab - animate bone");
             TreeNode lgoNode = new TreeNode("lgo - geometry object");
             TreeNode lmoNode = new TreeNode("lmo - map object");
             TreeNode lxoNode = new TreeNode("lxo - login scene");
+            TreeNode charNode = new TreeNode("characterinfo.bin - characters");
+            TreeNode itemNode = new TreeNode("iteminfo.bin - items");
+
+            int index = 0;
+            foreach (CChaRecord character in chainfo)
+            {
+                charinfokeys.Add(character.lID, index);
+                charNode.Nodes.Add(CutString(character.szDataName));
+                index++;
+            }
+            index = 0;
+            foreach (CItemRecord item in iteminfo)
+            {
+                iteminfokeys.Add(item.lID, index);
+                itemNode.Nodes.Add(CutString(item.szDataName));
+                index++;
+            }
             foreach (string s in labfiles)
             {
-                string name = s.Substring(s.LastIndexOf("\\") + 1) + "\t[" + s + "]";
-                labNode.Nodes.Add(name);
+                labNode.Nodes.Add(s.Substring(textBox1.Text.Length));
             }
             foreach (string s in lgofiles)
             {
-                string name = s.Substring(s.LastIndexOf("\\") + 1) + "\t[" + s + "]";
-                lgoNode.Nodes.Add(name);
+                lgoNode.Nodes.Add(s.Substring(textBox1.Text.Length));
             }
             foreach (string s in lmofiles)
             {
-                string name = s.Substring(s.LastIndexOf("\\") + 1) + "\t[" + s + "]";
-                lmoNode.Nodes.Add(name);
+                lmoNode.Nodes.Add(s.Substring(textBox1.Text.Length));
             }
             foreach (string s in lxofiles)
             {
-                string name = s.Substring(s.LastIndexOf("\\") + 1) + "\t[" + s + "]";
-                lxoNode.Nodes.Add(name);
+                lxoNode.Nodes.Add(s.Substring(textBox1.Text.Length));
             }
+
+            treeOfFiles.Nodes.Clear();
             treeOfFiles.Nodes.Add(labNode);
             treeOfFiles.Nodes.Add(lgoNode);
             treeOfFiles.Nodes.Add(lmoNode);
             treeOfFiles.Nodes.Add(lxoNode);
+            treeOfFiles.Nodes.Add(charNode);
+            treeOfFiles.Nodes.Add(itemNode);
         }
 
-        bool LoadAsBmp(System.IO.Stream stream)
+        bool LoadAsBmp(System.IO.Stream stream, lwTexInfo texInfo,bool loadOnForm = false)
         {
             try
             {
                 FreeImageAPI.FreeImageBitmap fbmp = FreeImageAPI.FreeImageBitmap.FromStream(stream);
+                //fbmp.Save("tmp.bmp", FreeImageAPI.FREE_IMAGE_FORMAT.FIF_BMP);
                 Bitmap bmp = fbmp.ToBitmap();
-                BitmapData bmp_data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                if (loadOnForm)
+                {
+                    pictureBox1.Image = bmp;
+                }
+                else
+                {
+                    if (texInfo != null && texInfo.colorkey_type == lwColorKeyTypeEnum.COLORKEY_TYPE_COLOR)
+                    {
+                        bmp.MakeTransparent(Color.FromArgb(texInfo.colorkey.a, texInfo.colorkey.r, texInfo.colorkey.g, texInfo.colorkey.b));
+                    }
+                    BitmapData bmp_data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, bmp_data.Width, bmp_data.Height, 0,
-                    OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bmp_data.Scan0);
+                    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, bmp_data.Width, bmp_data.Height, 0,
+                        OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bmp_data.Scan0);
 
-                bmp.UnlockBits(bmp_data);
+                    bmp.UnlockBits(bmp_data);
+                }
             }
             catch (Exception e) {return false; }
             return true;
         }
-        bool LoadTexture(string filename)
+        bool LoadTexture(string filename, lwTexInfo texInfo,bool loadOnForm=false)
         {
             filename = filename.Substring(0, filename.LastIndexOf('.'));
             if (System.IO.File.Exists(filename + ".bmp")) filename = filename + ".bmp";
@@ -115,7 +174,7 @@ namespace PKOModelViewer
             byte[] data = System.IO.File.ReadAllBytes(filename);
             
             System.IO.MemoryStream ms = new System.IO.MemoryStream(data);
-            if (LoadAsBmp(ms)) { ms.Close(); return true; }
+            if (LoadAsBmp(ms, texInfo, loadOnForm)) { ms.Close(); return true; }
             ms.Close();
 
             byte[] encodeddata = new byte[data.Length];
@@ -124,13 +183,17 @@ namespace PKOModelViewer
             Array.Copy(data, 44, encodeddata, 44, data.Length - 44 - 44);
             Array.Copy(data, 0, encodeddata, data.Length - 44, 44);
             ms = new System.IO.MemoryStream(encodeddata);
-            if (LoadAsBmp(ms)) { ms.Close(); return true; }
+            if (LoadAsBmp(ms, texInfo, loadOnForm)) { ms.Close(); return true; }
             ms.Close();
 
             return false;
         }
         void LoadTextures(ref lwGeomObjInfo geom, string originpath)
         {
+            string path = originpath.Replace("\\model\\", "\\texture\\");
+            int pathid = path.LastIndexOf("\\");
+            path = path.Substring(0, pathid + 1);
+
             for (int i = 0; i < geom.mtl_num; i++)
             {
                 for (int j = 0; j < geom.mtl_seq[i].tex_seq.Length; j++)
@@ -144,12 +207,10 @@ namespace PKOModelViewer
                         if (filename.Length > 0)
                         {
                             int id = GL.GenTexture();
-                            string path = originpath.Replace("\\model\\", "\\texture\\");
-                            int pathid = path.LastIndexOf("\\");
-                            string path2 = path.Substring(0, pathid + 1) + filename;
+                            string path2 = path + filename;
 
                             GL.BindTexture(TextureTarget.Texture2D, id);
-                            if (LoadTexture(path2))
+                            if (LoadTexture(path2, geom.mtl_seq[i].tex_seq[j]))
                             {
                                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
                                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
@@ -167,45 +228,74 @@ namespace PKOModelViewer
                 }
             }
         }
+
         private void treeOfFiles_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            int index = e.Node.Text.IndexOf('[');
-            if (index > 0)
+            if (e.Node.Level==1)
             {
-                string name = e.Node.Text.Substring(index + 1, e.Node.Text.Length - index - 2);
+                string name = e.Node.Text;
+                int index = e.Node.Index;
+                int parentindex = e.Node.Parent.Index;
 
-                if (name.Contains(".lab"))
+                if (parentindex==0)
                 {
                     lwAnimDataBone bone = new lwAnimDataBone();
-                    if (bone.Load(name) != 0) { bone = null; return; }
+                    if (bone.Load(labfiles[index]) != 0) { bone = null; return; }
 
-                    drawObject = bone;
-                    drawObjectType = DrawObjectType.lab;
+                    drawNum = 1;
+                    drawObject[0] = bone;
+                    drawObjectType[0] = DrawObjectType.lab;
 
                     glControl1.Refresh();
 
-                    string info = name + "\n";
+                    string info = labfiles[index] + "\n";
                     info += "\nbones: " + bone._header.bone_num;
                     info += "\nframes: " + bone._header.frame_num;
                     info += "\ndummys: " + bone._header.dummy_num;
+                    info += "\nkey type: " + bone._header.key_type;
+
+                    for (int i = 0; i < bone._header.bone_num; i++)
+                    {
+                        string bonename = new string(bone._base_seq[i].name);
+                        if (bonename.IndexOf('\0') > 0)
+                        {
+                            bonename = bonename.Substring(0, bonename.IndexOf('\0'));
+                            info += "\n bone " + bonename + " [" + bone._base_seq[i].id + " - " + bone._base_seq[i].parent_id + "]";
+                        }
+                    }
+                    for (int i = 0; i < bone._header.dummy_num; i++)
+                        info += "\n dummy " + bone._dummy_seq[i].id + " [" + bone._dummy_seq[i].parent_bone_id + "]";
 
                     richTextBox1.Text = info;
+                    trackBar1.Minimum = 0;
+                    trackBar1.Maximum = (int)bone._header.frame_num;
+                    trackBar1.Value = 0;
+                    numericUpDown1.Minimum = 0;
+                    numericUpDown1.Maximum = (int)bone._header.frame_num;
+                    numericUpDown1.Value = 0;
+                    animationTimer = 0;
+                    trackBar1.Enabled = true;
+                    numericUpDown1.Enabled = true;
+                    button1.Enabled = true;
+                    enableAnimation = true;
+                    pictureBox1.Visible = false;
                 }
 
-                else if (name.Contains(".lgo"))
+                else if (parentindex==1)
                 {
                     totaltextures = 0;
                     lwGeomObjInfo geom = new lwGeomObjInfo();
-                    if (geom.Load(name) != 0) { geom = null; return; }
+                    if (geom.Load(lgofiles[index]) != 0) { geom = null; return; }
 
-                    drawObject = geom;
-                    drawObjectType = DrawObjectType.lgo;
+                    drawNum = 1;
+                    drawObject[0] = geom;
+                    drawObjectType[0] = DrawObjectType.lgo;
 
                     foreach (uint tex in textures)
                         GL.DeleteTexture(tex);
-                    LoadTextures(ref geom, name);
+                    LoadTextures(ref geom, lgofiles[index]);
 
-                    string info = name + "\n";
+                    string info = lgofiles[index] + "\n";
                     info += "\nmaterials:" + geom.mtl_num;
                     for (int i = 0; i < geom.mtl_num; i++)
                     {
@@ -225,20 +315,26 @@ namespace PKOModelViewer
                     info += "\nmesh index num:" + geom.mesh.header.index_num;
 
                     richTextBox1.Text = info;
+                    trackBar1.Enabled = false;
+                    numericUpDown1.Enabled = false;
+                    button1.Enabled = false;
+                    enableAnimation = false;
+                    pictureBox1.Visible = false;
 
                     glControl1.Refresh();
                 }
 
-                else if (name.Contains(".lmo"))
+                else if (parentindex==2)
                 {
                     totaltextures = 0;
                     lwModelObjInfo model = new lwModelObjInfo();
-                    if (model.Load(name) != 0) { model = null; return; }
+                    if (model.Load(lmofiles[index]) != 0) { model = null; return; }
 
-                    drawObject = model;
-                    drawObjectType = DrawObjectType.lmo;
+                    drawNum = 1;
+                    drawObject[0] = model;
+                    drawObjectType[0] = DrawObjectType.lmo;
 
-                    string info = name + "\n";
+                    string info = lmofiles[index] + "\n";
                     info += "\nmodels: " + model.geom_obj_num;
 
                     foreach (uint tex in textures)
@@ -246,7 +342,7 @@ namespace PKOModelViewer
 
                     for (int q = 0; q < model.geom_obj_num; q++)
                     {
-                        LoadTextures(ref model.geom_obj_seq[q], name);
+                        LoadTextures(ref model.geom_obj_seq[q], lmofiles[index]);
 
                         info += "\n\n---model #"+q;
                         lwGeomObjInfo geom = model.geom_obj_seq[q];
@@ -270,20 +366,258 @@ namespace PKOModelViewer
                     }
 
                     richTextBox1.Text = info;
+                    trackBar1.Enabled = false;
+                    numericUpDown1.Enabled = false;
+                    button1.Enabled = false;
+                    enableAnimation = false;
+                    pictureBox1.Visible = false;
 
                     glControl1.Refresh();
                 }
 
-                else if (name.Contains(".lxo"))
+                else if (parentindex==3)
                 {
                     lwModelInfo modelinfo = new lwModelInfo();
-                    modelinfo.Load(name);
+                    modelinfo.Load(lxofiles[index]);
                     if (modelinfo.Load(name) != 0) { modelinfo = null; return; }
 
-                    drawObject = modelinfo;
-                    drawObjectType = DrawObjectType.lxo;
+                    drawNum = 1;
+                    drawObject[0] = modelinfo;
+                    drawObjectType[0] = DrawObjectType.lxo;
 
                     glControl1.Refresh();
+
+                    trackBar1.Enabled = false;
+                    numericUpDown1.Enabled = false;
+                    button1.Enabled = false;
+                    enableAnimation = false;
+                    pictureBox1.Visible = false;
+
+                    richTextBox1.Text = "Not active in this version";
+                }
+
+                else if (parentindex==4)
+                {
+                    CChaRecord character = chainfo[index];
+                    drawNum = 0;
+
+                    trackBar1.Enabled = false;
+                    numericUpDown1.Enabled = false;
+                    button1.Enabled = false;
+
+                    string info = CutString(character.szDataName) + "\n";
+                    info += "\nheight " + character.fHeight + "\n";
+                    info += "width " + character.fWidth + "\n";
+                    info += "length " + character.fLengh + "\n\n";
+                    info += "items (";
+                    for (int i = 0; i < character.lItem.Length; i++)
+                    {
+                        if (i != 0) info += ",";
+                        info += character.lItem[i];
+                    }
+                    info += ")\n\n";
+                    info += "script " + character.lScript + "\n";
+                    info += "ID " + character.nID + "\n";
+                    info += "index " + character.nIndex + "\n";
+                    info += "actionId " + character.sActionID + "\n";
+                    info += "bornEffect " + character.sBornEff + "\n";
+                    info += "dieEffect " + character.sDieEff + "\n";
+                    info += "effectId " + character.sEeffID + "\n";
+                    info += "effectActionId (";
+                    for (int i = 0; i < character.sEffectActionID.Length; i++)
+                    {
+                        if (i != 0) info += ",";
+                        info += character.sEffectActionID[i];
+                    }
+                    info += ")\nmodel " + character.sModel + "\n";
+                    info += "scinInfo (";
+                    for (int i = 0; i < character.sSkinInfo.Length; i++)
+                    {
+                        if (i != 0) info += ",";
+                        info += character.sSkinInfo[i];
+                    }
+                    info += ")\nsuitId " + character.sSuitID + "\n";
+                    info += "modalType " + (byte)character.chModalType + "\n";
+                    info += "suitNum " + character.sSuitNum + "\n\n";
+                    info += "guild: " + CutString(character.szGuild) + "\n";
+                    info += "iconName: " + CutString(character.szIconName) + "\n";
+                    info += "job: " + CutString(character.szJob) + "\n";
+                    info += "name: " + CutString(character.szName) + "\n";
+                    info += "title: " + CutString(character.szTitle) + "\n";
+
+                    trackBar1.Enabled = false;
+                    numericUpDown1.Enabled = false;
+                    button1.Enabled = false;
+                    enableAnimation = false;
+                    pictureBox1.Visible = false;
+
+                    if (character.chModalType == 1)
+                    {
+                        lwAnimDataBone bone = new lwAnimDataBone();
+                        if (bone.Load(textBox1.Text + "animation\\" + character.sModel.ToString("0000") + ".lab") == 0)
+                        {
+                            drawObject[drawNum] = bone;
+                            drawObjectType[drawNum] = DrawObjectType.lab;
+                            drawNum++;
+
+                            trackBar1.Minimum = 0;
+                            trackBar1.Maximum = (int)bone._header.frame_num;
+                            trackBar1.Value = 0;
+                            numericUpDown1.Minimum = 0;
+                            numericUpDown1.Maximum = (int)bone._header.frame_num;
+                            numericUpDown1.Value = 0;
+                            animationTimer = 0;
+                            trackBar1.Enabled = true;
+                            numericUpDown1.Enabled = true;
+                            button1.Enabled = true;
+                            enableAnimation = true;
+                        }
+
+                        info += "\nanimation: " + character.sModel.ToString("0000") + ".lab\n";
+
+                        foreach (uint tex in textures)
+                            GL.DeleteTexture(tex);
+                        totaltextures = 0;
+
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (character.sSkinInfo[i] != 0)
+                            {
+                                CItemRecord rec = iteminfo[iteminfokeys[character.sSkinInfo[i]]];
+
+                                char[] mdl = new char[19];
+                                Array.Copy(rec.chModule, (character.sModel + 1) * 19, mdl, 0, 19);
+
+                                lwGeomObjInfo geom = new lwGeomObjInfo();
+                                string filenameModel = textBox1.Text + "model\\character\\" + CutString(mdl) + ".lgo";
+                                if (geom.Load(filenameModel) == 0)
+                                {
+                                    LoadTextures(ref geom, filenameModel);
+                                    drawObject[drawNum] = geom;
+                                    drawObjectType[drawNum] = DrawObjectType.lgo;
+                                    drawNum++;
+                                }
+
+                                info += "model: " + CutString(mdl) + ".lgo\n";
+                            }
+                        }
+                    }
+                    if (character.chModalType == 4)
+                    {
+                        lwAnimDataBone bone = new lwAnimDataBone();
+                        if (bone.Load(textBox1.Text+"animation\\" + character.sModel.ToString("0000") + ".lab") == 0)
+                        {
+                            drawObject[drawNum] = bone;
+                            drawObjectType[drawNum] = DrawObjectType.lab;
+                            drawNum++;
+
+                            trackBar1.Minimum = 0;
+                            trackBar1.Maximum = (int)bone._header.frame_num;
+                            trackBar1.Value = 0;
+                            numericUpDown1.Minimum = 0;
+                            numericUpDown1.Maximum = (int)bone._header.frame_num;
+                            numericUpDown1.Value = 0;
+                            animationTimer = 0;
+                            trackBar1.Enabled = true;
+                            numericUpDown1.Enabled = true;
+                            button1.Enabled = true;
+                            enableAnimation = true;
+                        }
+
+                        info += "\nanimation: " + character.sModel.ToString("0000") + ".lab\n";
+
+                        foreach (uint tex in textures)
+                            GL.DeleteTexture(tex);
+                        totaltextures = 0;
+
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (character.sSkinInfo[i] != 0)
+                            {
+                                lwGeomObjInfo geom = new lwGeomObjInfo();
+                                string filenameModel = textBox1.Text + "model\\character\\" + (i + 10000 * (character.sSuitID + 100 * character.sModel)).ToString("0000000000") + ".lgo";
+                                if (geom.Load(filenameModel) == 0)
+                                {
+                                    LoadTextures(ref geom, filenameModel);
+                                    drawObject[drawNum] = geom;
+                                    drawObjectType[drawNum] = DrawObjectType.lgo;
+                                    drawNum++;
+                                }
+
+                                info += "model: " + (i + 10000 * (character.sSuitID + 100 * character.sModel)).ToString("0000000000") + ".lgo\n";
+                            }
+                        }
+                    }
+
+                    richTextBox1.Text = info;
+
+                    glControl1.Refresh();
+                }
+
+                if (parentindex == 5)
+                {
+                    CItemRecord item = iteminfo[index];
+                    drawNum = 1;
+                    drawObject[0] = item;
+                    drawObjectType[0] = DrawObjectType.item;
+
+                    string info = CutString(item.szDataName) + "\n\n";
+                    //info += "able link: " + CutString(item.szAbleLink) + "\n";
+                    info += "attr effect: " + CutString(item.szAttrEffect) + "\n";
+                    info += "descriptor: " + CutString(item.szDescriptor) + "\n";
+                    info += "icon: " + CutString(item.szICON) + "\n";
+                    info += "name: " + CutString(item.szName) + "\n\n";
+                    info += "id: " + item.lID + "\n";
+                    info += "modules: \n";
+                    for (int i = 0; i < 5; i++)
+                    {
+                        char[] mdl = new char[19];
+                        Array.Copy(item.chModule, i * 19, mdl, 0, 19);
+                        if (i == 0) info += "on drop:    " + CutString(mdl) + "\n";
+                        if (i == 1) info += "on Lance:   " + CutString(mdl) + "\n";
+                        if (i == 2) info += "on Carsise: " + CutString(mdl) + "\n";
+                        if (i == 3) info += "on Phyllis: " + CutString(mdl) + "\n";
+                        if (i == 4) info += "on Ami:     " + CutString(mdl) + "\n";
+                    }
+
+                    info += "\nforge lvl: " + (byte)item.chForgeLv + "\n";
+                    info += "forge ready: " + (byte)item.chForgeSteady + "\n";
+                    info += "instance: " + (byte)item.chInstance + "\n";
+                    info += "pick to: " + (byte)item.chPickTo + "\n";
+                    info += "price: " + item.lPrice + "\n";
+                    info += "index: " + item.nIndex + "\n";
+                    info += "l hand value: " + item.sLHandValu + "\n";
+                    info += "need lvl: " + item.sNeedLv + "\n";
+                    info += "type: " + (EItemType)item.sType + "\n";
+
+                    foreach (uint tex in textures)
+                        GL.DeleteTexture(tex);
+                    totaltextures = 0;
+                    //int id = GL.GenTexture();
+                    //GL.BindTexture(TextureTarget.Texture2D, id);
+                    if (LoadTexture(textBox1.Text + "texture\\icon\\" + CutString(item.szICON) + ".bmp", null,true))
+                    {
+                        pictureBox1.Visible = true;
+                        //textures[totaltextures] = id;
+                        //totaltextures++;
+                    }
+                    lwGeomObjInfo geom = new lwGeomObjInfo();
+                    string filenameModel = textBox1.Text + "model\\item\\" + CutString(item.chModule) + ".lgo";
+                    if (geom.Load(filenameModel) == 0)
+                    {
+                        LoadTextures(ref geom, filenameModel);
+                        drawObject[0] = geom;
+                        drawObjectType[0] = DrawObjectType.item;
+                        drawNum=1;
+                        glControl1.Refresh();
+                    }
+
+                    richTextBox1.Text = info;
+
+                    trackBar1.Enabled = false;
+                    numericUpDown1.Enabled = false;
+                    button1.Enabled = false;
+                    enableAnimation = false;
                 }
             }
         }
@@ -301,6 +635,21 @@ namespace PKOModelViewer
                 GL.End();
             }
         }
+        void DrawGrid()
+        {
+            GL.PushMatrix();
+            GL.Color3(0.5f, 0.5f, 0.5f);
+            GL.Begin(BeginMode.Lines);
+
+            for (int i = -10; i <= 10; i++)
+            {
+                GL.Vertex3(i, -10, 0); GL.Vertex3(i, 10, 0);
+                GL.Vertex3(-10, i, 0); GL.Vertex3(10, i, 0);
+            }
+
+                GL.End();
+            GL.PopMatrix();
+        }
         void DrawGeom(lwGeomObjInfo geom)
         {
             GL.PushMatrix();
@@ -308,6 +657,7 @@ namespace PKOModelViewer
             for (int j = 0; j < geom.mesh.header.subset_num; j++)
             {
                 GL.BindTexture(TextureTarget.Texture2D, geom.mtl_seq[j].tex_seq[0].data_pointer);
+                GL.Color3(1f, 1f, 1f);
                 GL.Begin(BeginMode.Triangles);
                 for (uint i = geom.mesh.subset_seq[j].start_index; i < geom.mesh.subset_seq[j].start_index + geom.mesh.subset_seq[j].primitive_num * 3; i++)
                 {
@@ -318,28 +668,148 @@ namespace PKOModelViewer
                     GL.Vertex3(p1.x, p1.y, p1.z);
                 }
                 GL.End();
+
+                //if (geom.mesh.bone_index_seq != null)
+                //{ 
+                //    GL.Disable(EnableCap.DepthTest);
+                //    GL.Disable(EnableCap.Texture2D);
+                //    GL.Color3(1f, 0f, 0f);
+                //    GL.Begin(BeginMode.Triangles);
+                //    for (int i = 0; i < geom.mesh.bone_index_seq.Length; i++)
+                //    {
+                //        D3DXVECTOR3 p1 = geom.mesh.vertex_seq[geom.mesh.bone_index_seq[i]];
+                //        GL.Vertex3(p1.x, p1.y, p1.z);
+                //    }
+                //    GL.End();
+                //    GL.Enable(EnableCap.DepthTest);
+                //    GL.Enable(EnableCap.Texture2D);
+                //}
             }
             GL.PopMatrix();
         }
-        private void glControl1_Paint(object sender, PaintEventArgs e)
+        Matrix4[] GetTransformByFrame(lwAnimDataBone bone,uint frame)
         {
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            Matrix4[] finishmatrixes = new Matrix4[bone._header.bone_num];
+            for (int i = 0; i < bone._header.bone_num; i++)
+            {
+                lwBoneKeyInfo key = bone._key_seq[i];
+                //Matrix4 startMat = Matrix4.Invert(invMat);
+                //Vector3 startPos = new Vector3(startMat.M41, startMat.M42, startMat.M43);
+                Matrix4 currentMat = Matrix4.Identity;
 
-            GL.MatrixMode(MatrixMode.Modelview);
-            GL.LoadIdentity();
-            Matrix4 camera = Matrix4.LookAt(new Vector3(5, 0, 5), new Vector3(0, 0, 1), new Vector3(0, 0, 1));
-            GL.MultMatrix(ref camera);
-            GL.Rotate(rotate + rotateOffcet, 0, 0, 1);
-            GL.Scale(scale*scaleOffcet,scale*scaleOffcet,scale*scaleOffcet);
-            GL.Color3(1f, 1f, 1f);
+                if (bone._header.key_type == lwBoneKeyInfoType.BONE_KEY_TYPE_QUAT)
+                {
+                    Quaternion quat = new Quaternion(key.quat_seq[frame].x, key.quat_seq[frame].y, key.quat_seq[frame].z, key.quat_seq[frame].w);
+                    Vector3 offcet = new Vector3(key.pos_seq[frame].x, key.pos_seq[frame].y, key.pos_seq[frame].z);
 
-            if (drawObjectType == DrawObjectType.lgo)
+                    currentMat = Matrix4.CreateFromQuaternion(quat) * Matrix4.CreateTranslation(offcet);
+                }
+                else if (bone._header.key_type == lwBoneKeyInfoType.BONE_KEY_TYPE_MAT43)
+                {
+                    currentMat = new Matrix4(key.mat43_seq[frame].m[0], key.mat43_seq[frame].m[1], key.mat43_seq[frame].m[2], 0,
+                                              key.mat43_seq[frame].m[3], key.mat43_seq[frame].m[4], key.mat43_seq[frame].m[5], 0,
+                                              key.mat43_seq[frame].m[6], key.mat43_seq[frame].m[7], key.mat43_seq[frame].m[8], 0,
+                                              key.mat43_seq[frame].m[9], key.mat43_seq[frame].m[10], key.mat43_seq[frame].m[11], 1);
+                }
+                else if (bone._header.key_type == lwBoneKeyInfoType.BONE_KEY_TYPE_MAT44)
+                {
+                    currentMat = new Matrix4(key.mat44_seq[frame].m[0], key.mat44_seq[frame].m[1], key.mat44_seq[frame].m[2], key.mat44_seq[frame].m[3],
+                                              key.mat44_seq[frame].m[4], key.mat44_seq[frame].m[5], key.mat44_seq[frame].m[6], key.mat44_seq[frame].m[7],
+                                              key.mat44_seq[frame].m[8], key.mat44_seq[frame].m[9], key.mat44_seq[frame].m[10], key.mat44_seq[frame].m[11],
+                                              key.mat44_seq[frame].m[12], key.mat44_seq[frame].m[13], key.mat44_seq[frame].m[14], key.mat44_seq[frame].m[15]);
+                }
+
+                if (bone._base_seq[i].parent_id != 0xffffffff && bone._base_seq[i].parent_id < bone._header.bone_num)
+                {
+                    currentMat = currentMat * finishmatrixes[bone._base_seq[i].parent_id];
+                }
+
+                finishmatrixes[i] = currentMat;
+            }
+
+            return finishmatrixes;
+        }
+        void DrawGeom(lwGeomObjInfo geom,lwAnimDataBone bone)
+        {
+            if (geom.mesh.header.bone_index_num > 0 && bone._header.frame_num == 0) { DrawGeom(geom); return; }
+            uint frame = animationTimer % bone._header.frame_num;
+            Matrix4[] finishmatrixes = GetTransformByFrame(bone, frame);
+            Vector3[] transformed = new Vector3[geom.mesh.header.bone_infl_factor];
+
+            GL.PushMatrix();
+            GL.MultMatrix(geom.header.mat_local.m);
+            for (int j = 0; j < geom.mesh.header.subset_num; j++)
+            {
+                GL.BindTexture(TextureTarget.Texture2D, geom.mtl_seq[j].tex_seq[0].data_pointer);
+                GL.Color3(1f, 1f, 1f);
+                GL.Begin(BeginMode.Triangles);
+                for (uint i = geom.mesh.subset_seq[j].start_index; i < geom.mesh.subset_seq[j].start_index + geom.mesh.subset_seq[j].primitive_num * 3; i++)
+                {
+                    uint vertexIndex = geom.mesh.index_seq[i];
+                    D3DXVECTOR3 dp1 = geom.mesh.vertex_seq[vertexIndex];
+                    D3DXVECTOR2 dt1 = geom.mesh.texcoord0_seq[vertexIndex];
+
+                    Vector3 p1 = new Vector3(dp1.x, dp1.y, dp1.z);
+                    Vector2 t1 = new Vector2(dt1.x, dt1.y);
+
+                    lwBlendInfo blend = geom.mesh.blend_seq[vertexIndex];
+                    for (int q = 0; q < geom.mesh.header.bone_infl_factor; q++)
+                    {
+                        uint boneIndex = geom.mesh.bone_index_seq[blend.index[q]];
+                        Matrix4 invMat = invMat = new Matrix4(bone._invmat_seq[boneIndex].m[0], bone._invmat_seq[boneIndex].m[1], bone._invmat_seq[boneIndex].m[2], bone._invmat_seq[boneIndex].m[3],
+                                         bone._invmat_seq[boneIndex].m[4], bone._invmat_seq[boneIndex].m[5], bone._invmat_seq[boneIndex].m[6], bone._invmat_seq[boneIndex].m[7],
+                                         bone._invmat_seq[boneIndex].m[8], bone._invmat_seq[boneIndex].m[9], bone._invmat_seq[boneIndex].m[10], bone._invmat_seq[boneIndex].m[11],
+                                         bone._invmat_seq[boneIndex].m[12], bone._invmat_seq[boneIndex].m[13], bone._invmat_seq[boneIndex].m[14], bone._invmat_seq[boneIndex].m[15]); ;
+
+                        transformed[q] = Vector3.Transform(p1, invMat * finishmatrixes[boneIndex]);
+                    }
+
+                    Vector3 finishpoint = transformed[0] * blend.weight[0];
+                    for (int q = 1; q < geom.mesh.header.bone_infl_factor; q++)
+                        finishpoint += transformed[q] * blend.weight[q];
+
+                    GL.TexCoord2(t1);
+                    GL.Vertex3(finishpoint);
+                }
+                GL.End();
+            }
+            GL.PopMatrix();
+        }
+        void DrawObject(object drawObject, DrawObjectType drawObjectType)
+        {
+            if (drawObjectType == DrawObjectType.item)
             {
                 lwGeomObjInfo geom = (lwGeomObjInfo)drawObject;
-
                 GL.Enable(EnableCap.Texture2D);
                 DrawGeom(geom);
+                GL.Disable(EnableCap.Texture2D);
+            }
+            if (drawObjectType == DrawObjectType.lgo)
+            {
+                if (drawNum > 1)
+                {
+                    lwAnimDataBone bone = null;
+                    for (int i = 0; i < drawNum; i++)
+                        if (this.drawObjectType[i] == DrawObjectType.lab)
+                        {
+                            bone = (lwAnimDataBone)this.drawObject[i];
+                            break;
+                        }
+                    if (bone != null)
+                    {
+                        lwGeomObjInfo geom = (lwGeomObjInfo)drawObject;
 
+                        GL.Enable(EnableCap.Texture2D);
+                        DrawGeom(geom, bone);
+                        GL.Disable(EnableCap.Texture2D);
+                        return;
+                    }
+                }
+
+                lwGeomObjInfo geom2 = (lwGeomObjInfo)drawObject;
+
+                GL.Enable(EnableCap.Texture2D);
+                DrawGeom(geom2);
                 GL.Disable(EnableCap.Texture2D);
             }
             if (drawObjectType == DrawObjectType.lmo)
@@ -356,8 +826,88 @@ namespace PKOModelViewer
             }
             else if (drawObjectType == DrawObjectType.lab)
             {
+                if (drawNum > 1)
+                    return;
+
                 lwAnimDataBone bone = (lwAnimDataBone)drawObject;
+
+                GL.Color3(1f, 1f, 1f);
+
+                if (bone._header.frame_num == 0) return;
+                uint frame = animationTimer % bone._header.frame_num;
+                Vector3[] positions = new Vector3[bone._header.bone_num];
+                Matrix4[] finishmatrixes = new Matrix4[bone._header.bone_num];
+                for (int i = 0; i < bone._header.bone_num; i++)
+                {
+                    lwBoneKeyInfo key = bone._key_seq[i];
+                    Matrix4 invMat = invMat = new Matrix4(bone._invmat_seq[i].m[0], bone._invmat_seq[i].m[1], bone._invmat_seq[i].m[2], bone._invmat_seq[i].m[3],
+                                             bone._invmat_seq[i].m[4], bone._invmat_seq[i].m[5], bone._invmat_seq[i].m[6], bone._invmat_seq[i].m[7],
+                                             bone._invmat_seq[i].m[8], bone._invmat_seq[i].m[9], bone._invmat_seq[i].m[10], bone._invmat_seq[i].m[11],
+                                             bone._invmat_seq[i].m[12], bone._invmat_seq[i].m[13], bone._invmat_seq[i].m[14], bone._invmat_seq[i].m[15]); ;
+                    Matrix4 startMat = Matrix4.Invert(invMat);
+                    Vector3 startPos = new Vector3(startMat.M41, startMat.M42, startMat.M43);
+                    Matrix4 currentMat = Matrix4.Identity;
+
+                    if (bone._header.key_type == lwBoneKeyInfoType.BONE_KEY_TYPE_QUAT)
+                    {
+                        Quaternion quat = new Quaternion(key.quat_seq[frame].x, key.quat_seq[frame].y, key.quat_seq[frame].z, key.quat_seq[frame].w);
+                        Vector3 offcet = new Vector3(key.pos_seq[frame].x, key.pos_seq[frame].y, key.pos_seq[frame].z);
+
+                        currentMat = Matrix4.CreateFromQuaternion(quat) * Matrix4.CreateTranslation(offcet);
+                    }
+                    else if (bone._header.key_type == lwBoneKeyInfoType.BONE_KEY_TYPE_MAT43)
+                    {
+                        currentMat = new Matrix4(key.mat43_seq[frame].m[0], key.mat43_seq[frame].m[1], key.mat43_seq[frame].m[2], 0,
+                                                  key.mat43_seq[frame].m[3], key.mat43_seq[frame].m[4], key.mat43_seq[frame].m[5], 0,
+                                                  key.mat43_seq[frame].m[6], key.mat43_seq[frame].m[7], key.mat43_seq[frame].m[8], 0,
+                                                  key.mat43_seq[frame].m[9], key.mat43_seq[frame].m[10], key.mat43_seq[frame].m[11], 1);
+                    }
+                    else if (bone._header.key_type == lwBoneKeyInfoType.BONE_KEY_TYPE_MAT44)
+                    {
+                        currentMat = new Matrix4(key.mat44_seq[frame].m[0], key.mat44_seq[frame].m[1], key.mat44_seq[frame].m[2], key.mat44_seq[frame].m[3],
+                                                  key.mat44_seq[frame].m[4], key.mat44_seq[frame].m[5], key.mat44_seq[frame].m[6], key.mat44_seq[frame].m[7],
+                                                  key.mat44_seq[frame].m[8], key.mat44_seq[frame].m[9], key.mat44_seq[frame].m[10], key.mat44_seq[frame].m[11],
+                                                  key.mat44_seq[frame].m[12], key.mat44_seq[frame].m[13], key.mat44_seq[frame].m[14], key.mat44_seq[frame].m[15]);
+                    }
+
+                    if (bone._base_seq[i].parent_id != 0xffffffff && bone._base_seq[i].parent_id < bone._header.bone_num)
+                    {
+                        currentMat = currentMat * finishmatrixes[bone._base_seq[i].parent_id];
+                    }
+
+                    finishmatrixes[i] = currentMat;
+                    positions[i] = Vector3.Transform(startPos, invMat * currentMat);
+                }
+
+                GL.Color3(1.0, 1.0, 1.0);
+                GL.Begin(BeginMode.Lines);
+                for (int i = 0; i < bone._header.bone_num; i++)
+                {
+                    Vector3 parentBonePos = Vector3.Zero;
+                    if (bone._base_seq[i].parent_id == 0xffffffff) continue;
+                    parentBonePos = new Vector3(positions[bone._base_seq[i].parent_id]);
+                    Vector3 bonePos = positions[i];
+
+                    GL.Vertex3(bonePos);
+                    GL.Vertex3(parentBonePos);
+                }
+                GL.End();
             }
+        }
+        private void glControl1_Paint(object sender, PaintEventArgs e)
+        {
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.LoadIdentity();
+            Matrix4 camera = Matrix4.LookAt(new Vector3(5, 0, 5), new Vector3(0, 0, 1), new Vector3(0, 0, 1));
+            GL.MultMatrix(ref camera);
+            GL.Rotate(rotate + rotateOffcet, 0, 0, 1);
+            GL.Scale(scale*scaleOffcet,scale*scaleOffcet,scale*scaleOffcet);
+
+            DrawGrid();
+            for (int i = 0; i < drawNum; i++)
+                DrawObject(drawObject[i],drawObjectType[i]);
 
             glControl1.SwapBuffers();
         }
@@ -376,6 +926,8 @@ namespace PKOModelViewer
         {
             GL.ClearColor(0.3f,0.3f,0.3f,1f);
             GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha,BlendingFactorDest.OneMinusSrcAlpha);
             SetProection();
         }
 
@@ -409,6 +961,61 @@ namespace PKOModelViewer
                 scaleOffcet = (float)Math.Pow(1.2,(-e.Y + oldMouseDown.Y) / 10);
                 glControl1.Refresh();
             }
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (enableAnimation&&playAnimation)
+            {
+                animationTimer++;
+                glControl1.Refresh();
+                isValueChangedProgramly = true;
+                trackBar1.Value = (int)animationTimer % trackBar1.Maximum;
+                numericUpDown1.Value = (int)animationTimer % numericUpDown1.Maximum;
+                isValueChangedProgramly = false;
+            }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            playAnimation = !playAnimation;
+
+            if (playAnimation) button1.Text = "||";
+            else button1.Text = ">";
+        }
+
+        private void trackBar1_Scroll(object sender, EventArgs e)
+        {
+                numericUpDown1.Value = trackBar1.Value;
+                animationTimer = (uint)trackBar1.Value;
+                if (!isValueChangedProgramly)
+                {
+                    playAnimation = false;
+                    button1.Text = ">";
+                    glControl1.Refresh();
+                }
+        }
+
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+            
+                trackBar1.Value = (int)numericUpDown1.Value;
+                animationTimer = (uint)trackBar1.Value;
+                if (!isValueChangedProgramly)
+                {
+                    playAnimation = false;
+                    button1.Text = ">";
+                    glControl1.Refresh();
+                }
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                textBox1.Text = System.IO.File.ReadAllText("config.txt");
+            }
+            catch { ;}
         }
     }
 }

@@ -19,6 +19,14 @@ namespace Mindpower
 
             return theStructure;
         }
+        public static T ReadStructFromArray<T>(byte[] bytes)
+        {
+            GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+            T theStructure = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+            handle.Free();
+
+            return theStructure;
+        }
 
         public static T[] ReadStructArray<T>(BinaryReader reader, int size)
         {
@@ -457,7 +465,8 @@ namespace Mindpower
         [MarshalAs(UnmanagedType.ByValArray,SizeConst=4)]
         /* this+0x0 */
         public byte[] index;  
-		/* this+0x0 */ //uint indexd; 
+		/* this+0x0 */ 
+        //uint indexd; 
         [MarshalAs(UnmanagedType.ByValArray,SizeConst=4)]
         /* this+0x4 */
         public float[] weight; 
@@ -1138,6 +1147,10 @@ namespace Mindpower
             {
                 version = 0;
                 System.Windows.Forms.MessageBox.Show("old animation file: " + file + ", need re-export it", "warning");
+
+                fp.Close();
+                fs.Close();
+                return ret;
             };
             if (this.Load(fp, version) >= 0)
             { // Overloaded version
