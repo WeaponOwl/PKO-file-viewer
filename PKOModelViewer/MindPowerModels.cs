@@ -1659,6 +1659,7 @@ namespace Mindpower
             lwMtlTexInfo[] buf = new lwMtlTexInfo[num];
             for (uint i = 0; i < num; i++)
             {
+                buf[i] = new lwMtlTexInfo();
                 lwMtlTexInfo_Load(ref buf[i], fp, version);
             }
             out_buf = buf;

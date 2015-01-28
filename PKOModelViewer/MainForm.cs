@@ -19,7 +19,7 @@ namespace PKOModelViewer
 {
     public partial class MainForm : Form
     {
-        enum DrawObjectType { none, lab, lgo, lmo, lxo, character, item };
+        enum DrawObjectType { none, lab, lgo, lmo, lxo, character, item,ship };
 
         object[] drawObject = new object[16];
         DrawObjectType[] drawObjectType = new DrawObjectType[16];
@@ -149,18 +149,37 @@ namespace PKOModelViewer
         {
             filename = GetRightTextureName(filename);
             if (filename != null)
-                return LoadBitmapByName(filename);
+            {
+                byte[] data = System.IO.File.ReadAllBytes(filename);
+                System.IO.MemoryStream ms = new System.IO.MemoryStream(data);
+                Bitmap bmp = LoadBitmapByStream(ms);
+                if (bmp != null) { ms.Close(); return bmp; }
+
+                data = ProcessTextureData(data);
+                ms = new System.IO.MemoryStream(data);
+                bmp = LoadBitmapByStream(ms);
+                if (bmp != null) { ms.Close(); return bmp; }
+                ms.Close();
+            }
             return null;
         }
         Bitmap LoadBitmapByName(string filename)
         {
-            FreeImageAPI.FreeImageBitmap fbmp = FreeImageAPI.FreeImageBitmap.FromFile(filename);
-            return fbmp.ToBitmap();
+            try
+            {
+                FreeImageAPI.FreeImageBitmap fbmp = FreeImageAPI.FreeImageBitmap.FromFile(filename);
+                return fbmp.ToBitmap();
+            }
+            catch { return null; }
         }
         Bitmap LoadBitmapByStream(System.IO.Stream stream)
         {
-            FreeImageAPI.FreeImageBitmap fbmp = FreeImageAPI.FreeImageBitmap.FromStream(stream);
-            return fbmp.ToBitmap();
+            try
+            {
+                FreeImageAPI.FreeImageBitmap fbmp = FreeImageAPI.FreeImageBitmap.FromStream(stream);
+                return fbmp.ToBitmap();
+            }
+            catch { return null; }
         }
         void LoadTextureFromBitmap(Bitmap bmp, int texture)
         {
@@ -298,7 +317,6 @@ namespace PKOModelViewer
             numericUpDown1.Enabled = false;
             button1.Enabled = false;
             enableAnimation = false;
-            pictureBox1.Visible = false;
         }
         void EnableAnimation(int frames)
         {
@@ -324,6 +342,7 @@ namespace PKOModelViewer
                 string name = e.Node.Text;
                 int index = e.Node.Index;
                 int parentindex = e.Node.Parent.Index;
+                pictureBox1.Visible = false;
 
                 #region lab loading
                 if (parentindex == 0)
@@ -371,8 +390,17 @@ namespace PKOModelViewer
                     drawObject[0] = geom;
                     drawObjectType[0] = DrawObjectType.lgo;
 
+                    DisableAnimation();
                     DeleteAllTextures();
                     LoadTexturesToGeom(ref geom, lgofiles[index]);
+
+                    if (geom.anim_data != null)
+                    {
+                        if (geom.anim_data.anim_bone != null)
+                            EnableAnimation((int)geom.anim_data.anim_bone._header.frame_num);
+                        if(geom.anim_data.anim_mat!=null)
+                            EnableAnimation((int)geom.anim_data.anim_mat._frame_num);
+                    }
 
                     string info = lgofiles[index] + "\n";
                     info += "\nmaterials:" + geom.mtl_num;
@@ -395,7 +423,6 @@ namespace PKOModelViewer
 
                     richTextBox1.Text = info;
 
-                    DisableAnimation();
                     glControl1.Refresh();
                 }
                 #endregion
@@ -414,14 +441,22 @@ namespace PKOModelViewer
                     string info = lmofiles[index] + "\n";
                     info += "\nmodels: " + model.geom_obj_num;
 
+                    DisableAnimation();
                     DeleteAllTextures();
 
                     for (int q = 0; q < model.geom_obj_num; q++)
                     {
+                        lwGeomObjInfo geom = model.geom_obj_seq[q];
                         LoadTexturesToGeom(ref model.geom_obj_seq[q], lmofiles[index]);
+                        if (geom.anim_data != null)
+                        {
+                            if (geom.anim_data.anim_bone != null)
+                                EnableAnimation((int)geom.anim_data.anim_bone._header.frame_num);
+                            if (geom.anim_data.anim_mat != null)
+                                EnableAnimation((int)geom.anim_data.anim_mat._frame_num);
+                        }
 
                         info += "\n\n---model #" + q;
-                        lwGeomObjInfo geom = model.geom_obj_seq[q];
                         info += "\nmaterials:" + geom.mtl_num;
                         for (int i = 0; i < geom.mtl_num; i++)
                         {
@@ -441,7 +476,6 @@ namespace PKOModelViewer
 
                     richTextBox1.Text = info;
 
-                    DisableAnimation();
                     glControl1.Refresh();
                 }
                 #endregion
@@ -559,6 +593,37 @@ namespace PKOModelViewer
                             }
                         }
                     }
+                    if (character.chModalType == 2)
+                    {
+                        info += "\nanimation: ?? \n";
+
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (character.sSkinInfo[i] != 0)
+                            {
+                                CItemRecord rec = iteminfo[iteminfokeys[character.sSkinInfo[i]]];
+
+                                char[] mdl = new char[19];
+                                Array.Copy(rec.chModule, 0, mdl, 0, 19);
+
+                                lwGeomObjInfo geom = new lwGeomObjInfo();
+                                string filenameModel = textBox1.Text + "model\\character\\" + CutString(mdl) + ".lgo";
+                                if (geom.Load(filenameModel) == 0)
+                                {
+                                    if (geom.anim_data != null && geom.anim_data.anim_mat != null)
+                                    {
+                                        EnableAnimation((int)geom.anim_data.anim_mat._frame_num);
+                                    }
+                                    LoadTexturesToGeom(ref geom, filenameModel);
+                                    drawObject[drawNum] = geom;
+                                    drawObjectType[drawNum] = DrawObjectType.ship;
+                                    drawNum++;
+                                }
+
+                                info += "model: " + CutString(mdl) + ".lgo\n";
+                            }
+                        }
+                    }
                     if (character.chModalType == 4)
                     {
                         lwAnimDataBone bone = new lwAnimDataBone();
@@ -639,7 +704,8 @@ namespace PKOModelViewer
                     info += "need lvl: " + item.sNeedLv + "\n";
                     info += "type: " + (EItemType)item.sType + "\n";
 
-                    pictureBox1.Image = LoadBitmaByTextureName(textBox1.Text + "texture\\icon\\" + CutString(item.szICON) + ".bmp");
+                    Bitmap bmp = LoadBitmaByTextureName(textBox1.Text + "texture\\icon\\" + CutString(item.szICON) + ".bmp");
+                    pictureBox1.Image = bmp;
                     pictureBox1.Visible = true;
 
                     lwGeomObjInfo geom = new lwGeomObjInfo();
@@ -725,7 +791,12 @@ namespace PKOModelViewer
                 {
                     DrawGeom(geom, data.anim_bone);
                     return;
-                };
+                }
+                if (data.anim_mat!=null)
+                {
+                    DrawGeom(geom, data.anim_mat);
+                    return;
+                }
             }
             GL.PushMatrix();
             GL.MultMatrix(geom.header.mat_local.m);
@@ -743,22 +814,6 @@ namespace PKOModelViewer
                     GL.Vertex3(p1.x, p1.y, p1.z);
                 }
                 GL.End();
-
-                //if (geom.mesh.bone_index_seq != null)
-                //{ 
-                //    GL.Disable(EnableCap.DepthTest);
-                //    GL.Disable(EnableCap.Texture2D);
-                //    GL.Color3(1f, 0f, 0f);
-                //    GL.Begin(BeginMode.Triangles);
-                //    for (int i = 0; i < geom.mesh.bone_index_seq.Length; i++)
-                //    {
-                //        D3DXVECTOR3 p1 = geom.mesh.vertex_seq[geom.mesh.bone_index_seq[i]];
-                //        GL.Vertex3(p1.x, p1.y, p1.z);
-                //    }
-                //    GL.End();
-                //    GL.Enable(EnableCap.DepthTest);
-                //    GL.Enable(EnableCap.Texture2D);
-                //}
             }
             GL.PopMatrix();
         }
@@ -808,6 +863,39 @@ namespace PKOModelViewer
             }
             GL.PopMatrix();
         }
+        void DrawGeom(lwGeomObjInfo geom ,lwAnimDataMatrix mat,bool usematlocal=false)
+        {
+            uint frame = animationTimer % mat._frame_num;
+            lwMatrix43 finishmatrix43 = mat._mat_seq[frame];
+            Matrix4 finishmatrix = new Matrix4(finishmatrix43.m[0], finishmatrix43.m[1], finishmatrix43.m[2], 0,
+                                               finishmatrix43.m[3], finishmatrix43.m[4], finishmatrix43.m[5], 0,
+                                               finishmatrix43.m[6], finishmatrix43.m[7], finishmatrix43.m[8], 0,
+                                               finishmatrix43.m[9], finishmatrix43.m[10], finishmatrix43.m[11], 1);
+
+            GL.PushMatrix();
+            GL.MultMatrix(ref finishmatrix);
+            if (usematlocal)
+                GL.MultMatrix(geom.header.mat_local.m);
+            for (int j = 0; j < geom.mesh.header.subset_num; j++)
+            {
+                GL.BindTexture(TextureTarget.Texture2D, geom.mtl_seq[j].tex_seq[0].data_pointer);
+                GL.Color3(1f, 1f, 1f);
+                GL.Begin(BeginMode.Triangles);
+                for (uint i = geom.mesh.subset_seq[j].start_index; i < geom.mesh.subset_seq[j].start_index + geom.mesh.subset_seq[j].primitive_num * 3; i++)
+                {
+                    D3DXVECTOR3 p1 = geom.mesh.vertex_seq[geom.mesh.index_seq[i]];
+                    D3DXVECTOR2 t1 = geom.mesh.texcoord0_seq[geom.mesh.index_seq[i]];
+
+                    //Vector3 p = Vector3.Transform(new Vector3(p1.x, p1.y, p1.z) , finishmatrix);
+                    Vector3 p = new Vector3(p1.x, p1.y, p1.z);
+
+                    GL.TexCoord2(t1.x, t1.y);
+                    GL.Vertex3(p);
+                }
+                GL.End();
+            }
+            GL.PopMatrix();
+        }
         void DrawBone(lwAnimDataBone bone)
         {
             if (bone._header.frame_num == 0) return;
@@ -843,6 +931,17 @@ namespace PKOModelViewer
         }
         void DrawObject(object drawObject, DrawObjectType drawObjectType)
         {
+            if (drawObjectType == DrawObjectType.ship)
+            {
+                GL.Enable(EnableCap.Texture2D);
+                 for (int i = 0; i < drawNum; i++)
+                     if (((lwGeomObjInfo)this.drawObject[i]).anim_data != null && ((lwGeomObjInfo)this.drawObject[i]).anim_data.anim_mat != null)
+                     {
+                         DrawGeom((lwGeomObjInfo)drawObject, ((lwGeomObjInfo)this.drawObject[i]).anim_data.anim_mat, true);
+                         break;
+                     }
+                 GL.Disable(EnableCap.Texture2D);
+            }
             if (drawObjectType == DrawObjectType.item)
             {
                 lwGeomObjInfo geom = (lwGeomObjInfo)drawObject;
@@ -871,14 +970,11 @@ namespace PKOModelViewer
                         return;
                     }
                 }
-                else
-                {
-                    lwGeomObjInfo geom2 = (lwGeomObjInfo)drawObject;
+                lwGeomObjInfo geom2 = (lwGeomObjInfo)drawObject;
 
-                    GL.Enable(EnableCap.Texture2D);
-                    DrawGeom(geom2);
-                    GL.Disable(EnableCap.Texture2D);
-                }
+                GL.Enable(EnableCap.Texture2D);
+                DrawGeom(geom2);
+                GL.Disable(EnableCap.Texture2D);
             }
             if (drawObjectType == DrawObjectType.lmo)
             {
