@@ -24,6 +24,7 @@ namespace Mindpower
     };
 
     [StructLayout(LayoutKind.Sequential, Pack=4)]
+    //  scripts/table/characterinfo
     class CChaRecord : CRawDataInfo
     {
         public int lID;

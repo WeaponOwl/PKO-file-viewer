@@ -442,7 +442,7 @@ namespace Mindpower
 	};
 
     [StructLayout(LayoutKind.Sequential,Pack=1)]
-    public struct lwMtlTexInfo 
+    public class lwMtlTexInfo 
 	{
         /* this+0x0 */
         public float opacity;
