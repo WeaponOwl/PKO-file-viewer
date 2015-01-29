@@ -8,7 +8,7 @@ using System.IO;
 namespace Mindpower
 {
     [StructLayout(LayoutKind.Sequential,Pack=4)]
-    class CRawDataInfo
+    public class CRawDataInfo
     {
         public int bExist;
         public int nIndex;
@@ -25,7 +25,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack=4)]
     //  scripts/table/characterinfo
-    class CChaRecord : CRawDataInfo
+    public class CChaRecord : CRawDataInfo
     {
         public int lID;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
@@ -166,7 +166,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/sceneobjinfo
-    class CSceneObjInfo : CRawDataInfo
+    public class CSceneObjInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         char[] szName;
@@ -200,7 +200,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     //  scripts/table/sceneffectinfo
-    class CMagicInfo : CRawDataInfo
+    public class CMagicInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         char[] szName;
@@ -221,7 +221,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     //  scripts/table/shadeinfo
-    class CShadeInfo : CRawDataInfo
+    public class CShadeInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         char[] szName;
@@ -241,21 +241,21 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     //  scripts/table/eventsound
-    class CEventSoundInfo : CRawDataInfo
+    public class CEventSoundInfo : CRawDataInfo
     {
         int nSoundID;
     };
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     //  scripts/table/musicinfo
-    class CMusicInfo : CRawDataInfo
+    public class CMusicInfo : CRawDataInfo
     {
         int nType;
     };
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/characterposeinfo
-    class CPoseInfo : CRawDataInfo
+    public class CPoseInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 7)]
         short[] sRealPoseID;
@@ -263,7 +263,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     //  scripts/table/selectcha
-    class CChaCreateInfo : CRawDataInfo
+    public class CChaCreateInfo : CRawDataInfo
     {
         uint type;
         uint bone;
@@ -288,7 +288,7 @@ namespace Mindpower
     };
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    class SSkillGridEx
+    public class SSkillGridEx
     {
         char chState;
         char chLv;
@@ -300,7 +300,7 @@ namespace Mindpower
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
         short[] sRange;
     };
-    enum eSelectCha
+    public enum eSelectCha
     {
         enumSC_NONE = 0x0,
         enumSC_ALL = 0x1,
@@ -318,7 +318,7 @@ namespace Mindpower
     };
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/skillinfo
-    class CSkillRecord : CRawDataInfo
+    public class CSkillRecord : CRawDataInfo
     {
         short sID;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 17)]
@@ -438,7 +438,7 @@ namespace Mindpower
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     //  scripts/table/skilleff
     //  THIS STRUCT HAVE WRONG SIZE!!!!
-    class CSkillStateRecord : CRawDataInfo
+    public class CSkillStateRecord : CRawDataInfo
     {
         char chID;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 17)]
@@ -482,7 +482,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 2)]
     //scripts/table/mapinfo
-    class CMapInfo : CRawDataInfo
+    public class CMapInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         char[] szName;
@@ -537,10 +537,9 @@ namespace Mindpower
         enumItemTypePetSock = 58,
         enumItemTypePet = 59
     }
-
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/iteminfo
-    class CItemRecord : CRawDataInfo
+    public class CItemRecord : CRawDataInfo
     {
         public int lID;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 80)]
@@ -669,7 +668,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/objevent
-    class CEventRecord : CRawDataInfo
+    public class CEventRecord : CRawDataInfo
     {
         int lID;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 18)]
@@ -686,7 +685,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/AreaSet
-    class CAreaInfo : CRawDataInfo
+    public class CAreaInfo : CRawDataInfo
     {
         uint dwColor;
         int nMusic;
@@ -699,7 +698,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/notifyset
-    class CNotifyInfo : CRawDataInfo
+    public class CNotifyInfo : CRawDataInfo
     {
         char chType;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
@@ -708,7 +707,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/chaticons
-    class CChatIconInfo : CRawDataInfo
+    public class CChatIconInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         char[] szSmall;
@@ -728,15 +727,15 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/itemtype
-    class CItemTypeInfo : CRawDataInfo { };
+    public class CItemTypeInfo : CRawDataInfo { };
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/itempre
-    class CItemPreSet : CRawDataInfo { };
+    public class CItemPreSet : CRawDataInfo { };
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/forgeitem
-    class CForgeRecord : CRawDataInfo
+    public class CForgeRecord : CRawDataInfo
     {
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
         struct FORGE_ITEM
@@ -757,7 +756,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/shipinfo
-    class xShipInfo : CRawDataInfo
+    public class xShipInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
         char[] szName;
@@ -803,7 +802,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/shipiteminfo
-    class xShipPartInfo : CRawDataInfo
+    public class xShipPartInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
         char[] szName;
@@ -833,7 +832,7 @@ namespace Mindpower
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     //  scripts/table/hairs
     //  HAVE WRONG SIZEOF
-    class CHairRecord : CRawDataInfo
+    public class CHairRecord : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
         char[] szColor;
@@ -851,7 +850,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/TerrainInfo
-    class MPTerrainInfo : CRawDataInfo
+    public class MPTerrainInfo : CRawDataInfo
     {
         public byte btType;
         public int nTextureID;
@@ -860,7 +859,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/ItemRefineInfo
-    class CItemRefineInfo : CRawDataInfo
+    public class CItemRefineInfo : CRawDataInfo
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 14)]
         short[] Value;
@@ -870,7 +869,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/ItemRefineEffectInfo
-    class CItemRefineEffectInfo : CRawDataInfo
+    public class CItemRefineEffectInfo : CRawDataInfo
     {
         int nLightID;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
@@ -884,7 +883,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/StoneInfo
-    class CStoneInfo : CRawDataInfo
+    public class CStoneInfo : CRawDataInfo
     {
         int nItemID;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
@@ -896,7 +895,7 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/ResourceInfo
-    class MPResourceInfo : CRawDataInfo
+    public class MPResourceInfo : CRawDataInfo
     {
         public enum MPRESOURCEINFO_TYPE
         {
@@ -914,14 +913,14 @@ namespace Mindpower
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     //  scripts/table/ElfSkillInfo
-    class CElfSkillInfo : CRawDataInfo
+    public class CElfSkillInfo : CRawDataInfo
     {
         int nIndex;
         int nTypeID;
     };
     
     [StructLayout(LayoutKind.Sequential,Pack=1)]
-    struct CRawDataSet<T>
+    public struct CRawDataSet<T>
     {
         //uint vfptr;
         //int _nIDStart;

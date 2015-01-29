@@ -50,6 +50,21 @@ namespace Mindpower
 
             return theStructures;
         }
+        public static T[] ReadStructArrayFromBytes<T>(byte[] bytes, uint size)
+        {
+            T[] theStructures = new T[size];
+
+            GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+            
+
+            for (uint i = 0; i < size; i++)
+            {
+                theStructures[i] = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject() + Marshal.SizeOf(typeof(T)), typeof(T));
+            }
+
+            handle.Free();
+            return theStructures;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential,Pack=1)]
@@ -93,6 +108,14 @@ namespace Mindpower
         D3DXVECTOR3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
         static public D3DXVECTOR3 operator+(D3DXVECTOR3 a,D3DXVECTOR3 b){return new D3DXVECTOR3(a.x+b.x,a.y+b.y,a.z+b.z);}
         static public D3DXVECTOR3 operator/(D3DXVECTOR3 a,float b){return new D3DXVECTOR3(a.x/b,a.y/b,a.z/b);}
+        static public D3DXVECTOR3 operator*(D3DXVECTOR3 a, D3DXMATRIX b) 
+        {
+            float x = a.x * b.m[0] + a.y * b.m[4] + a.z * b.m[8] + b.m[12];
+            float y = a.x * b.m[1] + a.y * b.m[5] + a.z * b.m[9] + b.m[13];
+            float z = a.x * b.m[2] + a.y * b.m[6] + a.z * b.m[10] + b.m[14];
+
+            return new D3DXVECTOR3(x, y, z);
+        }
     };
 
     [StructLayout(LayoutKind.Sequential,Pack=1)]

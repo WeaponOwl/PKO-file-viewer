@@ -26,14 +26,14 @@ namespace PKOModelViewer
         int drawNum = 0;
         int[] textures = new int[1024];
 
-        SortedDictionary<int, int> charinfokeys;
-        SortedDictionary<int, int> iteminfokeys;
-        CChaRecord[] chainfo;
-        CItemRecord[] iteminfo;
-        string[] labfiles;
-        string[] lgofiles;
-        string[] lmofiles;
-        string[] lxofiles;
+        public SortedDictionary<int, int> charinfokeys;
+        public SortedDictionary<int, int> iteminfokeys;
+        public CChaRecord[] chainfo;
+        public CItemRecord[] iteminfo;
+        public string[] labfiles;
+        public string[] lgofiles;
+        public string[] lmofiles;
+        public string[] lxofiles;
 
         int totaltextures = 0;
         float rotateX = 0;
@@ -46,6 +46,8 @@ namespace PKOModelViewer
         bool playAnimation = true;
         bool isValueChangedProgramly = false;
         Point oldMouseDown;
+
+        ExportForm exportForm;
 
         public MainForm()
         {
@@ -78,10 +80,6 @@ namespace PKOModelViewer
         }
         private void buttonFindFiles_Click(object sender, EventArgs e)
         {
-            charinfokeys = new SortedDictionary<int, int>();
-            iteminfokeys = new SortedDictionary<int, int>();
-            chainfo = CRawDataSet<CChaRecord>.LoadBin(textBox1.Text + "scripts\\table\\Characterinfo.bin");
-            iteminfo = CRawDataSet<CItemRecord>.LoadBin(textBox1.Text + "scripts\\table\\iteminfo.bin");
             labfiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lab", System.IO.SearchOption.AllDirectories);
             lgofiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lgo", System.IO.SearchOption.AllDirectories);
             lmofiles = System.IO.Directory.GetFiles(textBox1.Text, "*.lmo", System.IO.SearchOption.AllDirectories);
@@ -91,38 +89,34 @@ namespace PKOModelViewer
             TreeNode lgoNode = new TreeNode("lgo - geometry object");
             TreeNode lmoNode = new TreeNode("lmo - map object");
             TreeNode lxoNode = new TreeNode("lxo - login scene");
-            TreeNode charNode = new TreeNode("characterinfo.bin - characters");
-            TreeNode itemNode = new TreeNode("iteminfo.bin - items");
+            labNode.ContextMenuStrip = treeOfFileslvl0NodeMenu;
+            lgoNode.ContextMenuStrip = treeOfFileslvl0NodeMenu;
+            lmoNode.ContextMenuStrip = treeOfFileslvl0NodeMenu;
+            //lxoNode.ContextMenuStrip = treeOfFileslvl0NodeMenu;
 
-            int index = 0;
-            foreach (CChaRecord character in chainfo)
-            {
-                charinfokeys.Add(character.lID, index);
-                charNode.Nodes.Add(CutString(character.szDataName));
-                index++;
-            }
-            index = 0;
-            foreach (CItemRecord item in iteminfo)
-            {
-                iteminfokeys.Add(item.lID, index);
-                itemNode.Nodes.Add(CutString(item.szDataName));
-                index++;
-            }
             foreach (string s in labfiles)
             {
-                labNode.Nodes.Add(s.Substring(textBox1.Text.Length));
+                TreeNode node = new TreeNode(s.Substring(textBox1.Text.Length));
+                node.ContextMenuStrip = treeOfFileslvl1NodeMenu;
+                labNode.Nodes.Add(node);
             }
             foreach (string s in lgofiles)
             {
-                lgoNode.Nodes.Add(s.Substring(textBox1.Text.Length));
+                TreeNode node = new TreeNode(s.Substring(textBox1.Text.Length));
+                node.ContextMenuStrip = treeOfFileslvl1NodeMenu;
+                lgoNode.Nodes.Add(node);
             }
             foreach (string s in lmofiles)
             {
-                lmoNode.Nodes.Add(s.Substring(textBox1.Text.Length));
+                TreeNode node = new TreeNode(s.Substring(textBox1.Text.Length));
+                node.ContextMenuStrip = treeOfFileslvl1NodeMenu;
+                lmoNode.Nodes.Add(node);
             }
             foreach (string s in lxofiles)
             {
-                lxoNode.Nodes.Add(s.Substring(textBox1.Text.Length));
+                TreeNode node = new TreeNode(s.Substring(textBox1.Text.Length));
+                //node.ContextMenuStrip = treeOfFileslvl1NodeMenu;
+                lxoNode.Nodes.Add(node);
             }
 
             treeOfFiles.Nodes.Clear();
@@ -130,11 +124,45 @@ namespace PKOModelViewer
             treeOfFiles.Nodes.Add(lgoNode);
             treeOfFiles.Nodes.Add(lmoNode);
             treeOfFiles.Nodes.Add(lxoNode);
-            treeOfFiles.Nodes.Add(charNode);
-            treeOfFiles.Nodes.Add(itemNode);
+
+            try
+            {
+
+                charinfokeys = new SortedDictionary<int, int>();
+                iteminfokeys = new SortedDictionary<int, int>();
+                chainfo = CRawDataSet<CChaRecord>.LoadBin(textBox1.Text + "scripts\\table\\Characterinfo.bin");
+                iteminfo = CRawDataSet<CItemRecord>.LoadBin(textBox1.Text + "scripts\\table\\iteminfo.bin");
+                TreeNode charNode = new TreeNode("characterinfo.bin - characters");
+                TreeNode itemNode = new TreeNode("iteminfo.bin - items");
+                itemNode.ContextMenuStrip = treeOfFileslvl0NodeMenu;
+                charNode.ContextMenuStrip = treeOfFileslvl0NodeMenu;
+
+                int index = 0;
+                foreach (CChaRecord character in chainfo)
+                {
+                    charinfokeys.Add(character.lID, index);
+                    TreeNode node = new TreeNode(CutString(character.szDataName));
+                    node.ContextMenuStrip = treeOfFileslvl1NodeMenu;
+                    charNode.Nodes.Add(node);
+                    index++;
+                }
+                index = 0;
+                foreach (CItemRecord item in iteminfo)
+                {
+                    iteminfokeys.Add(item.lID, index);
+                    TreeNode node = new TreeNode(CutString(item.szDataName));
+                    node.ContextMenuStrip = treeOfFileslvl1NodeMenu;
+                    itemNode.Nodes.Add(node);
+                    index++;
+                }
+
+                treeOfFiles.Nodes.Add(charNode);
+                treeOfFiles.Nodes.Add(itemNode);
+            }
+            catch (Exception ex) { MessageBox.Show("Unable to parse some database files\n" + ex.ToString()); }
         }
 
-        string GetRightTextureName(string filename)
+        public string GetRightTextureName(string filename)
         {
             filename = filename.Substring(0, filename.LastIndexOf('.'));
             if (System.IO.File.Exists(filename + ".bmp")) filename = filename + ".bmp";
@@ -146,7 +174,7 @@ namespace PKOModelViewer
 
             return filename;
         }
-        Bitmap LoadBitmaByTextureName(string filename)
+        public Bitmap LoadBitmaByTextureName(string filename)
         {
             filename = GetRightTextureName(filename);
             if (filename != null)
@@ -266,6 +294,19 @@ namespace PKOModelViewer
             ms.Close();
 
             return false;
+        }
+        public byte[] LoadTextureToArray(string filename, out int width, out int height)
+        {
+            Bitmap bmp = LoadBitmaByTextureName(filename);
+            width = bmp.Width;
+            height = bmp.Height;
+
+            BitmapData bmp_data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            byte[] data = new byte[bmp.Width * bmp.Height * 4];
+            Marshal.Copy(bmp_data.Scan0, data, 0, bmp.Width * bmp.Height * 4);
+            bmp.UnlockBits(bmp_data);
+
+            return data;
         }
         void LoadTexturesToGeom(ref lwGeomObjInfo geom, string originpath)
         {
@@ -1127,15 +1168,98 @@ namespace PKOModelViewer
             }
         }
 
+        private void MainForm_Close(object sender, EventArgs e) { exportForm.Close(); }
         private void MainForm_Load(object sender, EventArgs e)
         {
             try
             {
                 textBox1.Text = System.IO.File.ReadAllText("config.txt");
             }
-            catch { ;}
+            catch 
+            {
+                try
+                {
+                    textBox1.Text = Environment.CurrentDirectory + "\\";
+                    System.IO.File.WriteAllText("config.txt", Environment.CurrentDirectory + "\\");
+                }
+                catch { ;}
+            }
 
+            exportForm = new ExportForm(this);
+            exportForm.Hide();
             glControl1.MouseWheel += glControl_MouseWheel;
+            this.FormClosing += MainForm_Close;
+        }
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+        private void exportListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            exportForm.Hide();
+            exportForm.Show();
+        }
+
+        void AddNodeToExportList(TreeNode node)
+        {
+            int index = node.Index;
+            int parentindex = node.Parent.Index;
+
+            if (parentindex == 0)
+            {
+                exportForm.listBoxExport.Items.Add("[lab] [" + index + "] " + node.Text);
+            }
+            else if (parentindex == 1)
+            {
+                exportForm.listBoxExport.Items.Add("[lgo] [" + index + "] " + node.Text);
+            }
+            else if (parentindex == 2)
+            {
+                exportForm.listBoxExport.Items.Add("[lmo] [" + index + "] " + node.Text);
+            }
+            else if (parentindex == 3)
+            {
+                exportForm.listBoxExport.Items.Add("[lxo] [" + index + "] " + node.Text);
+            }
+            else if (parentindex == 4)
+            {
+                exportForm.listBoxExport.Items.Add("[char] [" + index + "] " + node.Text);
+            }
+            else if (parentindex == 5)
+            {
+                exportForm.listBoxExport.Items.Add("[item] [" + index + "] " + node.Text);
+            }
+        }
+        private void pushThisToExportListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode node = treeOfFiles.SelectedNode;
+
+            AddNodeToExportList(node);
+        }
+        private void pushAllThisLvlToExportListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode node = treeOfFiles.SelectedNode;
+            TreeNodeCollection nodes = node.Parent.Nodes;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                AddNodeToExportList(nodes[i]);
+            }
+        }
+        private void pushAllChildrentToExportListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode node = treeOfFiles.SelectedNode;
+            TreeNodeCollection nodes = node.Nodes;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                AddNodeToExportList(nodes[i]);
+            }
+        }
+        private void treeOfFiles_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == System.Windows.Forms.MouseButtons.Right)
+            {
+                treeOfFiles.SelectedNode = treeOfFiles.GetNodeAt(e.X, e.Y);
+            }
         }
     }
 }
