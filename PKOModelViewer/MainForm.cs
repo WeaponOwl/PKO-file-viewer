@@ -48,6 +48,7 @@ namespace PKOModelViewer
         Point oldMouseDown;
 
         ExportForm exportForm;
+        ImportForm importForm;
 
         public MainForm()
         {
@@ -213,10 +214,13 @@ namespace PKOModelViewer
         void LoadTextureFromBitmap(Bitmap bmp, int texture)
         {
             GL.BindTexture(TextureTarget.Texture2D, texture);
-            BitmapData bmp_data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, bmp_data.Width, bmp_data.Height, 0,
-                OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bmp_data.Scan0);
-            bmp.UnlockBits(bmp_data);
+            if (bmp != null)
+            {
+                BitmapData bmp_data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, bmp_data.Width, bmp_data.Height, 0,
+                    OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bmp_data.Scan0);
+                bmp.UnlockBits(bmp_data);
+            }
 
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
@@ -258,9 +262,12 @@ namespace PKOModelViewer
             try
             {
                 Bitmap bmp = LoadBitmapByStream(stream);
-                if (texInfo.colorkey_type == lwColorKeyTypeEnum.COLORKEY_TYPE_COLOR)
-                    bmp.MakeTransparent(Color.FromArgb(texInfo.colorkey.a, texInfo.colorkey.r, texInfo.colorkey.g, texInfo.colorkey.b));
-                LoadTextureFromBitmap(bmp, texture);
+                if (bmp != null)
+                {
+                    if (texInfo.colorkey_type == lwColorKeyTypeEnum.COLORKEY_TYPE_COLOR)
+                        bmp.MakeTransparent(Color.FromArgb(texInfo.colorkey.a, texInfo.colorkey.r, texInfo.colorkey.g, texInfo.colorkey.b));
+                    LoadTextureFromBitmap(bmp, texture);
+                }
                 return true;
             }
             catch { return false; }
@@ -774,9 +781,12 @@ namespace PKOModelViewer
 
         void DrawGrid()
         {
+            GL.Enable(EnableCap.LineStipple);
+            GL.LineStipple(1, 0xaaaa); // long dash
+
             GL.PushMatrix();
             GL.Color3(0.5f, 0.5f, 0.5f);
-            GL.Begin(BeginMode.Lines);
+            GL.Begin(PrimitiveType.Lines);
 
             for (int i = -10; i <= 10; i++)
             {
@@ -786,6 +796,8 @@ namespace PKOModelViewer
 
             GL.End();
             GL.PopMatrix();
+
+            GL.Disable(EnableCap.PolygonStipple);
         }
         Matrix4[] GetTransformByFrame(lwAnimDataBone bone, uint frame)
         {
@@ -1084,7 +1096,7 @@ namespace PKOModelViewer
         }
         private void glControl1_Load(object sender, EventArgs e)
         {
-            GL.ClearColor(0.3f, 0.3f, 0.3f, 1f);
+            GL.ClearColor(44.0f / 255, 62.0f / 255, 80.0f / 255, 1.0f);
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
@@ -1189,6 +1201,9 @@ namespace PKOModelViewer
             exportForm.Hide();
             glControl1.MouseWheel += glControl_MouseWheel;
             this.FormClosing += MainForm_Close;
+
+            importForm = new ImportForm(this);
+            importForm.Hide();
         }
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1198,6 +1213,11 @@ namespace PKOModelViewer
         {
             exportForm.Hide();
             exportForm.Show();
+        }
+        private void importListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            importForm.Hide();
+            importForm.Show();
         }
 
         void AddNodeToExportList(TreeNode node)
@@ -1259,6 +1279,61 @@ namespace PKOModelViewer
             if (e.Button == System.Windows.Forms.MouseButtons.Right)
             {
                 treeOfFiles.SelectedNode = treeOfFiles.GetNodeAt(e.X, e.Y);
+            }
+        }
+
+        private void aboutProgramToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string message = "You can use this program or it's source codes as you wish, beside used 3rd party libs with own licencies.\n\n" +
+                "Author set no any limits over program's source code usage, share it freely.\n\n" +
+                "Structures used in this program was found in internet and author have no any idea who share it, but feels great respect to that person.\n\n" +
+                "Author ask you to share your modifications of this program for free, same as author did.\n\n" +
+                "Resources program can show or export are right-protected by current rights-owner of \"Pirate King Online\".\n"+
+                "Using resources may trigger copyright issue for you, so be careful, and use it on own risk.\n\n"+
+                "Have a good day, pirates";
+
+            MessageBox.Show(message, "PKO Model Viewer");
+        }
+
+        private string oldSearchName = "";
+        private int oldIndexSelected = 0;
+        private TreeNode[] SearchByStartString(string key, TreeNodeCollection collection)
+        {
+            List<TreeNode> nodesFound = new List<TreeNode>();
+
+            foreach (TreeNode node in collection)
+            {
+                if (node.Text.Contains(key))
+                {
+                    nodesFound.Add(node);
+                }
+
+                if (node.Nodes.Count > 0)
+                    nodesFound.AddRange(SearchByStartString(key, node.Nodes));
+            }
+
+            return nodesFound.ToArray();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            var tree = treeOfFiles;
+
+            var nodes = SearchByStartString(textBoxSearch.Text, tree.Nodes);
+
+            if (nodes.Length > 0)
+            {
+                if (oldSearchName == textBoxSearch.Text)
+                {
+                    oldIndexSelected = (oldIndexSelected + 1) % nodes.Length;
+                    tree.SelectedNode = nodes[oldIndexSelected];
+                }
+                else
+                {
+                    oldSearchName = textBoxSearch.Text;
+                    oldIndexSelected = 0;
+                    tree.SelectedNode = nodes[oldIndexSelected];
+                }
             }
         }
     }

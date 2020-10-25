@@ -65,6 +65,37 @@ namespace Mindpower
             handle.Free();
             return theStructures;
         }
+        public static void WriteStruct<T>(BinaryWriter writer, T structure)
+        {
+            if (structure == null) return;
+            System.Runtime.Serialization.Formatters.Binary.BinaryFormatter bf = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                byte[] data = RawSerialize(structure);
+                writer.Write(data);
+            }
+        }
+        public static void WriteStructArray<T>(BinaryWriter writer, T[] structures)
+        {
+            for (int i = 0; i < structures.Length; i++)
+            {
+                WriteStruct<T>(writer, structures[i]);
+            }
+        }
+        public static byte[] RawSerialize(object anything)
+        {
+            int rawsize =
+                Marshal.SizeOf(anything);
+            byte[] rawdata = new byte[rawsize];
+            GCHandle handle =
+                GCHandle.Alloc(rawdata,
+                GCHandleType.Pinned);
+            Marshal.StructureToPtr(anything,
+                handle.AddrOfPinnedObject(),
+                false);
+            handle.Free();
+            return rawdata;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential,Pack=1)]
@@ -1503,6 +1534,129 @@ namespace Mindpower
             fp.Close();
             fs.Close();
             return ret;
+        }
+
+        public long Save(string file)
+        {
+            System.IO.FileStream fp = new System.IO.FileStream(file, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+            System.IO.BinaryWriter bw = new System.IO.BinaryWriter(fp);
+
+            uint version = 0x1005;
+            bw.Write(version);
+            this.Save(bw);
+
+            bw.Close();
+            fp.Close();
+
+            return 0;
+        }
+
+        public int Save(System.IO.BinaryWriter fp)
+        {
+            StructReader.WriteStruct<lwGeomObjInfoHeader>(fp, header);
+
+            // save mtl data
+            if (header.mtl_size > 0)
+            {
+                lwMtlTexInfo_Save(fp, mtl_seq, mtl_num);
+            }
+
+            // save mesh data
+            if (header.mesh_size > 0)
+            {
+                lwMeshInfo_Save(fp);
+            }
+
+            // todo it yourself :p
+
+            //if (header.helper_size > 0)
+            //{
+            //    helper_data.Save(fp);
+            //}
+
+            //if (header.anim_size > 0)
+            //{
+            //    anim_data.Save(fp);
+            //}
+
+            return 0;
+        }
+
+        int lwMtlTexInfo_Save(System.IO.BinaryWriter fp, lwMtlTexInfo[] info, uint num)
+        {
+            //fp.Write(2);
+
+            fp.Write(num);
+
+            for (uint i = 0; i < num; i++)
+            {
+                fp.Write(info[i].opacity);
+                fp.Write((uint)info[i].transp_type);
+                StructReader.WriteStruct<lwMaterial>(fp, info[i].mtl);
+                StructReader.WriteStructArray<lwRenderStateAtom>(fp, info[i].rs_set);
+                StructReader.WriteStructArray<lwTexInfo>(fp, info[i].tex_seq);
+            }
+
+            return 0;
+        }
+        int lwMeshInfo_Save(System.IO.BinaryWriter fp)
+        {
+            StructReader.WriteStruct<lwMeshInfo.lwMeshInfoHeader>(fp, mesh.header);
+
+            if (mesh.header.vertex_element_num > 0)
+            {
+                StructReader.WriteStructArray<_D3DVERTEXELEMENT9>(fp, mesh.vertex_element_seq);
+            }
+
+            StructReader.WriteStructArray<D3DXVECTOR3>(fp, mesh.vertex_seq);
+
+            if ((mesh.header.fvf & 0x010) > 0)
+            {
+                StructReader.WriteStructArray<D3DXVECTOR3>(fp, mesh.normal_seq);
+            }
+
+            if ((mesh.header.fvf & 0x100) > 0)
+            {
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord0_seq);
+            }
+            else if ((mesh.header.fvf & 0x200) > 0)
+            {
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord0_seq);
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord1_seq);
+            }
+            else if ((mesh.header.fvf & 0x300) > 0)
+            {
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord0_seq);
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord1_seq);
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord2_seq);
+            }
+            else if ((mesh.header.fvf & 0x400) > 0)
+            {
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord0_seq);
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord1_seq);
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord2_seq);
+                StructReader.WriteStructArray<D3DXVECTOR2>(fp, mesh.texcoord3_seq);
+            }
+
+            if ((mesh.header.fvf & 0x040) > 0)
+            {
+                StructReader.WriteStructArray<uint>(fp, mesh.vercol_seq);
+            }
+
+            if (mesh.header.bone_index_num > 0)
+            {
+                StructReader.WriteStructArray<lwBlendInfo>(fp, mesh.blend_seq);
+                StructReader.WriteStructArray<uint>(fp, mesh.bone_index_seq);
+            }
+
+            if (mesh.header.index_num > 0)
+            {
+                StructReader.WriteStructArray<uint>(fp, mesh.index_seq);
+            }
+
+            StructReader.WriteStructArray<lwSubsetInfo>(fp, mesh.subset_seq);
+
+            return 0;
         }
 
         int lwMtlTexInfo_Load(ref lwMtlTexInfo info, BinaryReader fp, uint version)

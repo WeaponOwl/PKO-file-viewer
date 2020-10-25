@@ -54,6 +54,9 @@
             this.exportListToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutProgramToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.importListToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.textBoxSearch = new System.Windows.Forms.TextBox();
+            this.button2 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -171,9 +174,9 @@
             // 
             this.treeOfFiles.FullRowSelect = true;
             this.treeOfFiles.HideSelection = false;
-            this.treeOfFiles.Location = new System.Drawing.Point(12, 82);
+            this.treeOfFiles.Location = new System.Drawing.Point(12, 108);
             this.treeOfFiles.Name = "treeOfFiles";
-            this.treeOfFiles.Size = new System.Drawing.Size(253, 347);
+            this.treeOfFiles.Size = new System.Drawing.Size(253, 321);
             this.treeOfFiles.TabIndex = 10;
             this.treeOfFiles.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeOfFiles_AfterSelect);
             this.treeOfFiles.MouseClick += new System.Windows.Forms.MouseEventHandler(this.treeOfFiles_MouseClick);
@@ -252,7 +255,8 @@
             // viewToolStripMenuItem
             // 
             this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.exportListToolStripMenuItem});
+            this.exportListToolStripMenuItem,
+            this.importListToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.viewToolStripMenuItem.Text = "View";
@@ -260,7 +264,7 @@
             // exportListToolStripMenuItem
             // 
             this.exportListToolStripMenuItem.Name = "exportListToolStripMenuItem";
-            this.exportListToolStripMenuItem.Size = new System.Drawing.Size(125, 22);
+            this.exportListToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.exportListToolStripMenuItem.Text = "Export list";
             this.exportListToolStripMenuItem.Click += new System.EventHandler(this.exportListToolStripMenuItem_Click);
             // 
@@ -275,14 +279,42 @@
             // aboutProgramToolStripMenuItem
             // 
             this.aboutProgramToolStripMenuItem.Name = "aboutProgramToolStripMenuItem";
-            this.aboutProgramToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.aboutProgramToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.aboutProgramToolStripMenuItem.Text = "About program";
+            this.aboutProgramToolStripMenuItem.Click += new System.EventHandler(this.aboutProgramToolStripMenuItem_Click);
+            // 
+            // importListToolStripMenuItem
+            // 
+            this.importListToolStripMenuItem.Name = "importListToolStripMenuItem";
+            this.importListToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.importListToolStripMenuItem.Text = "Import list";
+            this.importListToolStripMenuItem.Click += new System.EventHandler(this.importListToolStripMenuItem_Click);
+            // 
+            // textBoxSearch
+            // 
+            this.textBoxSearch.Location = new System.Drawing.Point(12, 82);
+            this.textBoxSearch.Name = "textBoxSearch";
+            this.textBoxSearch.Size = new System.Drawing.Size(124, 20);
+            this.textBoxSearch.TabIndex = 12;
+            this.textBoxSearch.Text = "01010004.lgo";
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(142, 80);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(123, 23);
+            this.button2.TabIndex = 13;
+            this.button2.Text = "Search";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(932, 441);
+            this.Controls.Add(this.button2);
+            this.Controls.Add(this.textBoxSearch);
             this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.treeOfFiles);
             this.Controls.Add(this.pictureBox1);
@@ -337,6 +369,9 @@
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutProgramToolStripMenuItem;
         public System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.ToolStripMenuItem importListToolStripMenuItem;
+        public System.Windows.Forms.TextBox textBoxSearch;
+        private System.Windows.Forms.Button button2;
     }
 }
 
