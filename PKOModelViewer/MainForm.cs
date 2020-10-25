@@ -267,8 +267,9 @@ namespace PKOModelViewer
                     if (texInfo.colorkey_type == lwColorKeyTypeEnum.COLORKEY_TYPE_COLOR)
                         bmp.MakeTransparent(Color.FromArgb(texInfo.colorkey.a, texInfo.colorkey.r, texInfo.colorkey.g, texInfo.colorkey.b));
                     LoadTextureFromBitmap(bmp, texture);
+                    return true;
                 }
-                return true;
+                return false;
             }
             catch { return false; }
         }
@@ -1096,7 +1097,7 @@ namespace PKOModelViewer
         }
         private void glControl1_Load(object sender, EventArgs e)
         {
-            GL.ClearColor(44.0f / 255, 62.0f / 255, 80.0f / 255, 1.0f);
+            GL.ClearColor(189 / 255.0f, 195 / 255.0f, 199 / 255.0f, 1.0f);
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
