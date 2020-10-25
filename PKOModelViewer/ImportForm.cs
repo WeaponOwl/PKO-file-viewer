@@ -119,6 +119,8 @@ namespace PKOModelViewer
             }
         };
 
+
+
         void ImportObjToLgo(string filename)
         {
             var lines = System.IO.File.ReadAllLines(filename);
@@ -213,9 +215,11 @@ namespace PKOModelViewer
                         currentSubset = new ObjSubsetData() { name = parts[1] };
                         break;
                     case "usemtl":
+                        if (currentSubset == null) currentSubset = new ObjSubsetData() { name = "Unnamed" };
                         currentSubset.material = parts[1];
                         break;
                     case "s":
+                        if (currentSubset == null) currentSubset = new ObjSubsetData() { name = "Unnamed" };
                         currentSubset.smooth = parts[1] == "on";
                         break;
                     case "f":
@@ -225,7 +229,7 @@ namespace PKOModelViewer
                             currentSubset.addVertexData(parts[i]);
                         }
                         break;
-                    default: throw new NotImplementedException();
+                    default:break;
                 }
             }
 
@@ -304,6 +308,12 @@ namespace PKOModelViewer
 
                 if (thisMaterial != null)
                 {
+                    if (thisMaterial.textureName == null)
+                    {
+                        thisMaterial.textureName = "1.BMP";
+                        ShowInputDialog(ref thisMaterial.textureName, "No texture for material " + thisMaterial.name + ". Enter new one texture name");
+                    }
+
                     geom.mtl_seq[materiasCounter].mtl.amb.r = thisMaterial.a.r;
                     geom.mtl_seq[materiasCounter].mtl.amb.g = thisMaterial.a.g;
                     geom.mtl_seq[materiasCounter].mtl.amb.b = thisMaterial.a.b;
@@ -336,7 +346,11 @@ namespace PKOModelViewer
                     string sourceTexture = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(filename), thisMaterial.textureName);
                     if (System.IO.File.Exists(sourceTexture) && System.IO.Directory.Exists(textBox2.Text))
                     {
-                        System.IO.File.Copy(sourceTexture, System.IO.Path.Combine(textBox2.Text, thisMaterial.textureName));
+                        try
+                        {
+                            System.IO.File.Copy(sourceTexture, System.IO.Path.Combine(textBox2.Text, thisMaterial.textureName));
+                        }
+                        catch {; }
                     }
                 }
                 else
@@ -478,6 +492,45 @@ namespace PKOModelViewer
             geom.header.helper_size = 0;
 
             geom.Save(System.IO.Path.Combine(textBox1.Text, System.IO.Path.GetFileNameWithoutExtension(filename) + ".lgo"));
+        }
+
+        private static DialogResult ShowInputDialog(ref string input, string message)
+        {
+            System.Drawing.Size size = new System.Drawing.Size(500, 70);
+            Form inputBox = new Form();
+
+            inputBox.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            inputBox.ClientSize = size;
+            inputBox.Text = message;
+
+            System.Windows.Forms.TextBox textBox = new TextBox();
+            textBox.Size = new System.Drawing.Size(size.Width - 10, 23);
+            textBox.Location = new System.Drawing.Point(5, 5);
+            textBox.Text = input;
+            inputBox.Controls.Add(textBox);
+
+            Button okButton = new Button();
+            okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            okButton.Name = "okButton";
+            okButton.Size = new System.Drawing.Size(75, 23);
+            okButton.Text = "&OK";
+            okButton.Location = new System.Drawing.Point(size.Width - 80 - 80, 39);
+            inputBox.Controls.Add(okButton);
+
+            Button cancelButton = new Button();
+            cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            cancelButton.Name = "cancelButton";
+            cancelButton.Size = new System.Drawing.Size(75, 23);
+            cancelButton.Text = "&Cancel";
+            cancelButton.Location = new System.Drawing.Point(size.Width - 80, 39);
+            inputBox.Controls.Add(cancelButton);
+
+            inputBox.AcceptButton = okButton;
+            inputBox.CancelButton = cancelButton;
+
+            DialogResult result = inputBox.ShowDialog();
+            input = textBox.Text;
+            return result;
         }
     }
 }
