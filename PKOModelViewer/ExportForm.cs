@@ -104,7 +104,6 @@ namespace PKOModelViewer
         private void ExportForm_Load(object sender, EventArgs e)
         {
             this.ControlBox = false;
-            listBoxFormats.SelectedIndex = 0;
 
             textBox1.Text = parentForm.textBox1.Text + "exportedmodel\\";
             textBox2.Text = parentForm.textBox1.Text + "exportedtexture\\";
@@ -332,8 +331,6 @@ namespace PKOModelViewer
 
         void Export(ExportGroup group)
         {
-            if (listBoxFormats.SelectedIndex == 0)
-            {
                 string filename=textBox3.Text;
                 if (!checkBox3.Checked)
                 {
@@ -350,7 +347,6 @@ namespace PKOModelViewer
 
                 info.stream.Close();
                 info.mtlstream.Close();
-            }
         }
         void ExportToObj(lwGeomObjInfo geom, string obj_name, string pathtomodel, ExportGroup group, ExportObjInfo info)
         {

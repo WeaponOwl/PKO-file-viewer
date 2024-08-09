@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using Mindpower;
+using System.Xml.Linq;
 
 namespace PKOModelViewer
 {
@@ -43,7 +44,6 @@ namespace PKOModelViewer
         private void ImportForm_Load(object sender, EventArgs e)
         {
             this.ControlBox = false;
-            listBoxFormats.SelectedIndex = 0;
 
             textBox1.Text = parentForm.textBox1.Text + "importmodel\\";
             textBox2.Text = parentForm.textBox1.Text + "importmodel\\";
@@ -66,23 +66,29 @@ namespace PKOModelViewer
 
         private void button3_Click(object sender, EventArgs e)
         {
-            if (listBoxFormats.SelectedIndex == 0)
+            string filename = textBox3.Text;
+
+            if (!System.IO.Directory.Exists(textBox1.Text)) MessageBox.Show("Target model folder not exists");
+            if (!System.IO.Directory.Exists(textBox2.Text)) MessageBox.Show("Target texture folder not exists");
+
+            if (textBox5.Text.Length > 0 && System.IO.File.Exists(textBox5.Text))
             {
-                string filename = textBox3.Text;
-
-                if (!System.IO.Directory.Exists(textBox1.Text)) MessageBox.Show("Target model folder not exists");
-                if (!System.IO.Directory.Exists(textBox2.Text)) MessageBox.Show("Target texture folder not exists");
-
-                if (radioButton1.Checked)
+                try
                 {
-                    ImportObjToLgo(filename);
+                    lwGeomObjInfo geomHelperClone = new lwGeomObjInfo();
+                    geomHelperClone.Load(textBox5.Text);
+
+                    if (geomHelperClone.header.helper_size == 0)
+                    {
+                        MessageBox.Show("Binding points reference have empty data about binding points");
+                    }
                 }
-                else if (radioButton2.Checked)
+                catch
                 {
-                    // not ready
-                    // ImportObjToLmo(filename);
                 }
             }
+
+            ImportObjToLgo(filename, textBox5.Text, checkBox1.Checked, checkBox2.Checked);
         }
 
         class ObjMaterialData
@@ -113,15 +119,15 @@ namespace PKOModelViewer
                 this.vertexes.Add(new VertexData()
                 {
                     vertex = int.Parse(subparts[0]),
-                    normal = int.Parse(subparts[1]),
-                    texCoords = int.Parse(subparts[2])
+                    normal = int.Parse(subparts[2]),
+                    texCoords = int.Parse(subparts[1]),
                 });
             }
         };
 
 
 
-        void ImportObjToLgo(string filename)
+        void ImportObjToLgo(string filename, string cloneHelperFilename, bool additiveSecondMaterial, bool swapYTexture)
         {
             var lines = System.IO.File.ReadAllLines(filename);
 
@@ -205,17 +211,30 @@ namespace PKOModelViewer
                             z = float.Parse(parts[3], CultureInfo.InvariantCulture)
                         }); break;
                     case "vt":
-                        textures.Add(new Mindpower.D3DXVECTOR2()
+                        if (swapYTexture)
                         {
-                            x = float.Parse(parts[1], CultureInfo.InvariantCulture),
-                            y = float.Parse(parts[2], CultureInfo.InvariantCulture)
-                        }); break;
+                            textures.Add(new Mindpower.D3DXVECTOR2()
+                            {
+                                x = float.Parse(parts[1], CultureInfo.InvariantCulture),
+                                y = 1 - float.Parse(parts[2], CultureInfo.InvariantCulture)
+                            });
+                        }
+                        else
+                        {
+                            textures.Add(new Mindpower.D3DXVECTOR2()
+                            {
+                                x = float.Parse(parts[1], CultureInfo.InvariantCulture),
+                                y = float.Parse(parts[2], CultureInfo.InvariantCulture)
+                            });
+                        }
+                        break;
                     case "g":
                         if (currentSubset != null) subsets.Add(currentSubset);
                         currentSubset = new ObjSubsetData() { name = parts[1] };
                         break;
                     case "usemtl":
-                        if (currentSubset == null) currentSubset = new ObjSubsetData() { name = "Unnamed" };
+                        if (currentSubset != null) subsets.Add(currentSubset);
+                        currentSubset = new ObjSubsetData() { name = "Unnamed" };
                         currentSubset.material = parts[1];
                         break;
                     case "s":
@@ -234,6 +253,12 @@ namespace PKOModelViewer
             }
 
             if (currentSubset != null) subsets.Add(currentSubset);
+
+            for (int i = subsets.Count - 1; i >= 0; i--)
+            {
+                if (subsets[i].vertexes.Count == 0)
+                    subsets.RemoveAt(i);
+            }
 
             Dictionary<ObjSubsetData.VertexData, int> indexes = new Dictionary<ObjSubsetData.VertexData, int>();
             List<uint> indexesSeq = new List<uint>();
@@ -330,8 +355,11 @@ namespace PKOModelViewer
                     for (int i = 0; i < geom.mtl_seq[materiasCounter].rs_set.Length; i++)
                         geom.mtl_seq[materiasCounter].rs_set[i].state = unchecked((uint)-1);
                     for (int i = 0; i < geom.mtl_seq[materiasCounter].tex_seq.Length; i++)
+                    {
+                        geom.mtl_seq[materiasCounter].tex_seq[i].stage = unchecked((uint)-1);
                         for (int j = 0; j < geom.mtl_seq[materiasCounter].tex_seq[i].tss_set.Length; j++)
                             geom.mtl_seq[materiasCounter].tex_seq[i].tss_set[j].state = unchecked((uint)-1);
+                    }
                     geom.mtl_seq[materiasCounter].transp_type = Mindpower.lwMtlTexInfoTransparencyTypeEnum.MTLTEX_TRANSP_FILTER;
 
                     geom.mtl_seq[materiasCounter].tex_seq[0].type = (int)Mindpower.lwTexInfoTypeEnum.TEX_TYPE_FILE;
@@ -375,14 +403,39 @@ namespace PKOModelViewer
                 totalIndexes += subset.vertexes.Count;
             }
 
+            if(geom.mtl_seq.Length > 1 && additiveSecondMaterial)
+            {
+                geom.mtl_seq[1].transp_type = lwMtlTexInfoTransparencyTypeEnum.MTLTEX_TRANSP_ADDITIVE;
+
+                geom.mtl_seq[1].rs_set[0].state = 19;
+                geom.mtl_seq[1].rs_set[0].value0 = 2;
+                geom.mtl_seq[1].rs_set[0].value1 = 2;
+
+                geom.mtl_seq[1].rs_set[1].state = 20;
+                geom.mtl_seq[1].rs_set[1].value0 = 2;
+                geom.mtl_seq[1].rs_set[1].value1 = 2;
+
+                geom.mtl_seq[1].rs_set[2].state = 14;
+                geom.mtl_seq[1].rs_set[2].value0 = 0;
+                geom.mtl_seq[1].rs_set[2].value1 = 0;
+
+                geom.mtl_seq[1].rs_set[3].state = 137;
+                geom.mtl_seq[1].rs_set[3].value0 = 0;
+                geom.mtl_seq[1].rs_set[3].value1 = 0;
+
+                geom.mtl_seq[1].rs_set[4].state = 28;
+                geom.mtl_seq[1].rs_set[4].value0 = 0;
+                geom.mtl_seq[1].rs_set[4].value1 = 0;
+            }
+
             foreach (var keyValue in indexes)
             {
                 int index = keyValue.Value;
                 var vertexData = keyValue.Key;
 
                 geom.mesh.vertex_seq[index] = vertexes[vertexData.vertex - 1];
-                geom.mesh.normal_seq[index] = normals[vertexData.vertex - 1];
-                geom.mesh.texcoord0_seq[index] = textures[vertexData.vertex - 1];
+                geom.mesh.normal_seq[index] = normals[vertexData.normal - 1];
+                geom.mesh.texcoord0_seq[index] = textures[vertexData.texCoords - 1];
             }
 
             geom.mesh.header.vertex_num = (uint)indexes.Count;
@@ -394,6 +447,8 @@ namespace PKOModelViewer
             geom.header.mat_local = new D3DXMATRIX() { m = new float[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 } };
             geom.header.rcci.ctrl_id = 1;
             geom.header.rcci.decl_id = 5;
+            geom.header.rcci.ps_id = 4294967295;
+            geom.header.rcci.vs_id = 4294967295;
             geom.mtl_num = (uint)subsets.Count;
 
             {
@@ -456,7 +511,7 @@ namespace PKOModelViewer
                     geom.mesh.vertex_element_seq[i] = vert_decl[i];
             }
 
-            geom.mesh.header.fvf = 0x110;
+            geom.mesh.header.fvf = 0x112;
             geom.mesh.header.pt_type = _D3DPRIMITIVETYPE.D3DPT_TRIANGLELIST;
 
             geom.header.mtl_size = 0;
@@ -473,8 +528,12 @@ namespace PKOModelViewer
             geom.header.state_ctrl = new lwStateCtrl() { _state_seq = new byte[8] };
             geom.header.state_ctrl.SetState(0, 1);
             geom.header.state_ctrl.SetState(1, 1);
+            if (geom.mtl_seq.Length > 1 && additiveSecondMaterial)
+            {
+                geom.header.state_ctrl.SetState(4, 1);
+            }
 
-            if (geom.header.mtl_size > 0)
+                if (geom.header.mtl_size > 0)
             {
                 geom.header.mtl_size += (uint)Marshal.SizeOf(typeof(uint)); // number
             }
@@ -491,7 +550,161 @@ namespace PKOModelViewer
             geom.header.anim_size = 0;
             geom.header.helper_size = 0;
 
+            // copy dummy points
+            if (cloneHelperFilename.Length > 0 && System.IO.File.Exists(cloneHelperFilename))
+            {
+                try
+                {
+                    lwGeomObjInfo geomHelperClone = new lwGeomObjInfo();
+                    geomHelperClone.Load(cloneHelperFilename);
+
+                    geom.header.helper_size = geomHelperClone.header.helper_size;
+                    geom.helper_data = geomHelperClone.helper_data;
+                }
+                catch
+                {
+                    geom.header.helper_size = 0;
+
+                    MessageBox.Show("Binding points reference wasn't applied. Some error.");
+                }
+            }
+
+            OptimizeGeometry(ref geom);
+
             geom.Save(System.IO.Path.Combine(textBox1.Text, System.IO.Path.GetFileNameWithoutExtension(filename) + ".lgo"));
+        }
+
+        class OptimizeVertexData
+        {
+            public int index;
+            public D3DXVECTOR3? position;
+            public D3DXVECTOR2? texCoord;
+            public uint? color;
+
+            public int Hash()
+            {
+                List<byte> bytes = new List<byte>();
+
+                unsafe
+                {
+                    if (position != null)
+                    {
+                        bytes.AddRange(BitConverter.GetBytes(position.Value.x));
+                        bytes.AddRange(BitConverter.GetBytes(position.Value.y));
+                        bytes.AddRange(BitConverter.GetBytes(position.Value.z));
+                    }
+
+                    if (texCoord != null)
+                    {
+                        bytes.AddRange(BitConverter.GetBytes(texCoord.Value.x));
+                        bytes.AddRange(BitConverter.GetBytes(texCoord.Value.y));
+                    }
+
+                    if (color != null)
+                    {
+                        bytes.AddRange(BitConverter.GetBytes(unchecked((int)color)));
+                    }
+                }
+
+                int i = bytes.Count;
+                int hash = i + 1;
+
+                while (--i >= 0)
+                {
+                    hash *= 257;
+                    hash ^= bytes[i];
+                }
+
+                return hash;
+            }
+        }
+
+        void OptimizeGeometry(ref lwGeomObjInfo geom)
+        {
+            Dictionary<int, int> reorderHash = new Dictionary<int, int>();
+            List<D3DXVECTOR3> reorderNormals = new List<D3DXVECTOR3>();
+            List<int> reorderCount = new List<int>();
+
+            int[] hashes = new int[geom.mesh.header.vertex_num];
+            OptimizeVertexData[] data = new OptimizeVertexData[geom.mesh.header.vertex_num];
+            for (int i = 0; i < geom.mesh.header.vertex_num; i++)
+            {
+                data[i] = new OptimizeVertexData() { index = i };
+                if (geom.mesh.vertex_seq != null) data[i].position = geom.mesh.vertex_seq[i];
+                if (geom.mesh.texcoord0_seq != null) data[i].texCoord = geom.mesh.texcoord0_seq[i];
+                if (geom.mesh.vercol_seq != null) data[i].color = geom.mesh.vercol_seq[i];
+
+                hashes[i] = data[i].Hash();
+                if (!reorderHash.ContainsKey(hashes[i]))
+                {
+                    reorderHash.Add(hashes[i], reorderHash.Count);
+                    reorderNormals.Add(geom.mesh.normal_seq[i]);
+                    reorderCount.Add(1);
+                }
+                else
+                {
+                    reorderNormals[reorderHash[hashes[i]]] = reorderNormals[reorderHash[hashes[i]]] + geom.mesh.normal_seq[i];
+                    reorderCount[reorderHash[hashes[i]]] = reorderCount[reorderHash[hashes[i]]] + 1;
+                }
+            }
+
+            D3DXVECTOR3[] position = null;
+            D3DXVECTOR3[] normal = null;
+            D3DXVECTOR2[] texCoord = null;
+            uint[] color = null;
+
+            if (geom.mesh.vertex_seq != null) position = new D3DXVECTOR3[reorderHash.Count];
+            if (geom.mesh.normal_seq != null) normal = new D3DXVECTOR3[reorderHash.Count];
+            if (geom.mesh.texcoord0_seq != null) texCoord = new D3DXVECTOR2[reorderHash.Count];
+            if (geom.mesh.vercol_seq != null) color = new uint[reorderHash.Count];
+
+            for (int i = 0; i < geom.mesh.header.vertex_num; i++)
+            {
+                hashes[i] = data[i].Hash();
+                int newIndex = reorderHash[hashes[i]];
+
+                if (geom.mesh.vertex_seq != null) position[newIndex] = geom.mesh.vertex_seq[i];
+                if (geom.mesh.normal_seq != null) normal[newIndex] = reorderNormals[newIndex] / reorderCount[newIndex];
+                if (geom.mesh.texcoord0_seq != null) texCoord[newIndex] = geom.mesh.texcoord0_seq[i];
+                if (geom.mesh.vercol_seq != null) color[newIndex] = geom.mesh.vercol_seq[i];
+            }
+
+            for (int i = 0; i < geom.mesh.header.index_num; i++)
+            {
+                int newIndex = reorderHash[hashes[geom.mesh.index_seq[i]]];
+                geom.mesh.index_seq[i] = (uint)newIndex;
+            }
+
+            geom.mesh.header.vertex_num = (uint)position.Length;
+            geom.mesh.vertex_seq = position;
+            geom.mesh.normal_seq = normal;
+            geom.mesh.texcoord0_seq = texCoord;
+            geom.mesh.vercol_seq = color;
+
+            for (int i = 0; i < geom.mesh.subset_seq.Length; i++)
+            {
+                uint minIndex = geom.mesh.subset_seq[i].min_index;
+                List<uint> vertexes = new List<uint>();
+
+                for (int j = 0; j < geom.mesh.subset_seq[i].primitive_num * 3; j++)
+                {
+                    uint indexValue = geom.mesh.index_seq[geom.mesh.subset_seq[i].start_index + (uint)j];
+                    if (minIndex > indexValue) minIndex = indexValue;
+                    if (!vertexes.Contains(indexValue)) vertexes.Add(indexValue);
+                }
+
+                geom.mesh.subset_seq[i].min_index = minIndex;
+                geom.mesh.subset_seq[i].vertex_num = (uint)vertexes.Count;
+            }
+
+            geom.header.mesh_size =
+                (uint)Marshal.SizeOf(typeof(lwMeshInfo.lwMeshInfoHeader))
+                + (uint)Marshal.SizeOf(typeof(_D3DVERTEXELEMENT9)) * geom.mesh.header.vertex_element_num
+                + (uint)Marshal.SizeOf(typeof(lwSubsetInfo)) * geom.mesh.header.subset_num
+                + (uint)Marshal.SizeOf(typeof(D3DXVECTOR3)) * geom.mesh.header.vertex_num
+                + (uint)Marshal.SizeOf(typeof(D3DXVECTOR3)) * geom.mesh.header.vertex_num
+                + (uint)Marshal.SizeOf(typeof(D3DXVECTOR2)) * geom.mesh.header.vertex_num
+                + (uint)Marshal.SizeOf(typeof(uint)) * geom.mesh.header.index_num;
         }
 
         private static DialogResult ShowInputDialog(ref string input, string message)
@@ -531,6 +744,69 @@ namespace PKOModelViewer
             DialogResult result = inputBox.ShowDialog();
             input = textBox.Text;
             return result;
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog2.ShowDialog() == DialogResult.OK)
+            {
+                textBox5.Text = openFileDialog2.FileName;
+            }
+        }
+
+        private void lanceSwordToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\01010027.lgo";
+        }
+
+        private void swordOfAzureFlameCarsiseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\02010025.lgo";
+        }
+
+        private void greatHammerOfZestLanceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\01020008.lgo";
+        }
+
+        private void greatHammerOfZestCarsiseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\02020038.lgo";
+        }
+
+        private void vinyonLanceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\01040020.lgo";
+        }
+
+        private void vinyonPhyllisToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\03040020.lgo";
+        }
+
+        private void bladeOfTheFrozenCrescentLanceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\01070034.lgo";
+        }
+
+        private void bladeOfTheFrozenCrescentPhyllisToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\03070034.lgo";
+        }
+
+        private void bladeOfTheFrozenCrescentAmiToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\04070034.lgo";
+        }
+
+        private void drumOfTheBurningCrescentPhyllisToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\03090056.lgo";
+        }
+
+        private void drumOfTheBurningCrescentAmiToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            textBox5.Text = parentForm.textBox1.Text + "model\\item\\04090056.lgo";
         }
     }
 }

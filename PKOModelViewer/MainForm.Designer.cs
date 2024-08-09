@@ -29,9 +29,11 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.buttonLoad = new System.Windows.Forms.Button();
+            System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("How use Model viewer");
+            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("1, Choose client folder");
+            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("2. Load client content");
+            System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("3. Select client content for preview");
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
-            this.buttonFindFiles = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.glControl1 = new OpenTK.GLControl();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
@@ -39,7 +41,6 @@
             this.trackBar1 = new System.Windows.Forms.TrackBar();
             this.button1 = new System.Windows.Forms.Button();
             this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.treeOfFiles = new System.Windows.Forms.TreeView();
             this.treeOfFileslvl1NodeMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.pushThisToExportListToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -50,46 +51,36 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.chooseDirectoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.exportListToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.toObjConvertorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.fromObjConvertorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.aboutProgramToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.importListToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.textBoxSearch = new System.Windows.Forms.TextBox();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.buttonFindFiles = new System.Windows.Forms.Button();
+            this.buttonLoad = new System.Windows.Forms.Button();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.button2 = new System.Windows.Forms.Button();
+            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.openFolderSelectDialogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.treeOfFileslvl1NodeMenu.SuspendLayout();
             this.treeOfFileslvl0NodeMenu.SuspendLayout();
             this.menuStrip1.SuspendLayout();
+            this.groupBox1.SuspendLayout();
+            this.groupBox2.SuspendLayout();
+            this.contextMenuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
-            // 
-            // buttonLoad
-            // 
-            this.buttonLoad.Location = new System.Drawing.Point(12, 27);
-            this.buttonLoad.Name = "buttonLoad";
-            this.buttonLoad.Size = new System.Drawing.Size(124, 23);
-            this.buttonLoad.TabIndex = 1;
-            this.buttonLoad.Text = "Choose directory";
-            this.buttonLoad.UseVisualStyleBackColor = true;
-            this.buttonLoad.Click += new System.EventHandler(this.buttonSelectFoler_Click);
-            // 
-            // buttonFindFiles
-            // 
-            this.buttonFindFiles.Location = new System.Drawing.Point(142, 27);
-            this.buttonFindFiles.Name = "buttonFindFiles";
-            this.buttonFindFiles.Size = new System.Drawing.Size(123, 23);
-            this.buttonFindFiles.TabIndex = 2;
-            this.buttonFindFiles.Text = "Open directory";
-            this.buttonFindFiles.UseVisualStyleBackColor = true;
-            this.buttonFindFiles.Click += new System.EventHandler(this.buttonFindFiles_Click);
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(12, 56);
+            this.textBox1.Location = new System.Drawing.Point(6, 19);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(253, 20);
+            this.textBox1.Size = new System.Drawing.Size(192, 20);
             this.textBox1.TabIndex = 3;
             this.textBox1.Text = "D:\\Games\\TalesOfPirate\\Пиратия Online\\";
             // 
@@ -101,7 +92,7 @@
             this.glControl1.BackColor = System.Drawing.Color.Black;
             this.glControl1.Location = new System.Drawing.Point(271, 27);
             this.glControl1.Name = "glControl1";
-            this.glControl1.Size = new System.Drawing.Size(438, 351);
+            this.glControl1.Size = new System.Drawing.Size(548, 394);
             this.glControl1.TabIndex = 4;
             this.glControl1.VSync = false;
             this.glControl1.Load += new System.EventHandler(this.glControl1_Load);
@@ -115,9 +106,10 @@
             // 
             this.richTextBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.richTextBox1.Location = new System.Drawing.Point(715, 27);
+            this.richTextBox1.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.richTextBox1.Location = new System.Drawing.Point(825, 27);
             this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(205, 402);
+            this.richTextBox1.Size = new System.Drawing.Size(205, 445);
             this.richTextBox1.TabIndex = 5;
             this.richTextBox1.Text = "";
             // 
@@ -132,9 +124,9 @@
             this.trackBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.trackBar1.Enabled = false;
-            this.trackBar1.Location = new System.Drawing.Point(406, 384);
+            this.trackBar1.Location = new System.Drawing.Point(406, 427);
             this.trackBar1.Name = "trackBar1";
-            this.trackBar1.Size = new System.Drawing.Size(303, 45);
+            this.trackBar1.Size = new System.Drawing.Size(413, 45);
             this.trackBar1.TabIndex = 6;
             this.trackBar1.Scroll += new System.EventHandler(this.trackBar1_Scroll);
             // 
@@ -142,7 +134,7 @@
             // 
             this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.button1.Enabled = false;
-            this.button1.Location = new System.Drawing.Point(271, 384);
+            this.button1.Location = new System.Drawing.Point(271, 427);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(45, 45);
             this.button1.TabIndex = 7;
@@ -154,29 +146,34 @@
             // 
             this.numericUpDown1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.numericUpDown1.Enabled = false;
-            this.numericUpDown1.Location = new System.Drawing.Point(322, 398);
+            this.numericUpDown1.Location = new System.Drawing.Point(322, 441);
             this.numericUpDown1.Name = "numericUpDown1";
             this.numericUpDown1.Size = new System.Drawing.Size(78, 20);
             this.numericUpDown1.TabIndex = 8;
             this.numericUpDown1.ValueChanged += new System.EventHandler(this.numericUpDown1_ValueChanged);
             // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.pictureBox1.Location = new System.Drawing.Point(873, 38);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(38, 38);
-            this.pictureBox1.TabIndex = 9;
-            this.pictureBox1.TabStop = false;
-            this.pictureBox1.Visible = false;
-            // 
             // treeOfFiles
             // 
+            this.treeOfFiles.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
             this.treeOfFiles.FullRowSelect = true;
             this.treeOfFiles.HideSelection = false;
-            this.treeOfFiles.Location = new System.Drawing.Point(12, 108);
+            this.treeOfFiles.Location = new System.Drawing.Point(6, 45);
             this.treeOfFiles.Name = "treeOfFiles";
-            this.treeOfFiles.Size = new System.Drawing.Size(253, 321);
+            treeNode1.Name = "Node3";
+            treeNode1.Text = "How use Model viewer";
+            treeNode2.Name = "Node0";
+            treeNode2.Text = "1, Choose client folder";
+            treeNode3.Name = "Node1";
+            treeNode3.Text = "2. Load client content";
+            treeNode4.Name = "Node2";
+            treeNode4.Text = "3. Select client content for preview";
+            this.treeOfFiles.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
+            treeNode1,
+            treeNode2,
+            treeNode3,
+            treeNode4});
+            this.treeOfFiles.Size = new System.Drawing.Size(241, 314);
             this.treeOfFiles.TabIndex = 10;
             this.treeOfFiles.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeOfFiles_AfterSelect);
             this.treeOfFiles.MouseClick += new System.Windows.Forms.MouseEventHandler(this.treeOfFiles_MouseClick);
@@ -187,19 +184,19 @@
             this.pushThisToExportListToolStripMenuItem,
             this.pushAllThisLvlToExportListToolStripMenuItem});
             this.treeOfFileslvl1NodeMenu.Name = "treeOfFileslvl1NodeMenu";
-            this.treeOfFileslvl1NodeMenu.Size = new System.Drawing.Size(221, 48);
+            this.treeOfFileslvl1NodeMenu.Size = new System.Drawing.Size(222, 48);
             // 
             // pushThisToExportListToolStripMenuItem
             // 
             this.pushThisToExportListToolStripMenuItem.Name = "pushThisToExportListToolStripMenuItem";
-            this.pushThisToExportListToolStripMenuItem.Size = new System.Drawing.Size(220, 22);
+            this.pushThisToExportListToolStripMenuItem.Size = new System.Drawing.Size(221, 22);
             this.pushThisToExportListToolStripMenuItem.Text = "Push this to export list";
             this.pushThisToExportListToolStripMenuItem.Click += new System.EventHandler(this.pushThisToExportListToolStripMenuItem_Click);
             // 
             // pushAllThisLvlToExportListToolStripMenuItem
             // 
             this.pushAllThisLvlToExportListToolStripMenuItem.Name = "pushAllThisLvlToExportListToolStripMenuItem";
-            this.pushAllThisLvlToExportListToolStripMenuItem.Size = new System.Drawing.Size(220, 22);
+            this.pushAllThisLvlToExportListToolStripMenuItem.Size = new System.Drawing.Size(221, 22);
             this.pushAllThisLvlToExportListToolStripMenuItem.Text = "Push all this lvl to export list";
             this.pushAllThisLvlToExportListToolStripMenuItem.Click += new System.EventHandler(this.pushAllThisLvlToExportListToolStripMenuItem_Click);
             // 
@@ -208,12 +205,12 @@
             this.treeOfFileslvl0NodeMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.pushAllChildrentToExportListToolStripMenuItem});
             this.treeOfFileslvl0NodeMenu.Name = "treeOfFileslvl0NodeMenu";
-            this.treeOfFileslvl0NodeMenu.Size = new System.Drawing.Size(234, 26);
+            this.treeOfFileslvl0NodeMenu.Size = new System.Drawing.Size(235, 26);
             // 
             // pushAllChildrentToExportListToolStripMenuItem
             // 
             this.pushAllChildrentToExportListToolStripMenuItem.Name = "pushAllChildrentToExportListToolStripMenuItem";
-            this.pushAllChildrentToExportListToolStripMenuItem.Size = new System.Drawing.Size(233, 22);
+            this.pushAllChildrentToExportListToolStripMenuItem.Size = new System.Drawing.Size(234, 22);
             this.pushAllChildrentToExportListToolStripMenuItem.Text = "Push all childrent to export list";
             this.pushAllChildrentToExportListToolStripMenuItem.Click += new System.EventHandler(this.pushAllChildrentToExportListToolStripMenuItem_Click);
             // 
@@ -221,11 +218,13 @@
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
-            this.viewToolStripMenuItem,
+            this.toolStripMenuItem1,
+            this.toObjConvertorToolStripMenuItem,
+            this.fromObjConvertorToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(932, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(1042, 24);
             this.menuStrip1.TabIndex = 11;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -235,108 +234,180 @@
             this.chooseDirectoryToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
-            this.fileToolStripMenuItem.Text = "File";
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(41, 20);
+            this.fileToolStripMenuItem.Text = "App";
             // 
             // chooseDirectoryToolStripMenuItem
             // 
             this.chooseDirectoryToolStripMenuItem.Name = "chooseDirectoryToolStripMenuItem";
-            this.chooseDirectoryToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
-            this.chooseDirectoryToolStripMenuItem.Text = "Choose directory";
+            this.chooseDirectoryToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.chooseDirectoryToolStripMenuItem.Text = "Choose client folder";
             this.chooseDirectoryToolStripMenuItem.Click += new System.EventHandler(this.buttonSelectFoler_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
-            // viewToolStripMenuItem
+            // toolStripMenuItem1
             // 
-            this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.exportListToolStripMenuItem,
-            this.importListToolStripMenuItem});
-            this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.viewToolStripMenuItem.Text = "View";
+            this.toolStripMenuItem1.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.toolStripMenuItem1.Image = global::PKOModelViewer.Properties.Resources.ukraine;
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(120, 20);
+            this.toolStripMenuItem1.Text = "Support Ukraine";
+            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
             // 
-            // exportListToolStripMenuItem
+            // toObjConvertorToolStripMenuItem
             // 
-            this.exportListToolStripMenuItem.Name = "exportListToolStripMenuItem";
-            this.exportListToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.exportListToolStripMenuItem.Text = "Export list";
-            this.exportListToolStripMenuItem.Click += new System.EventHandler(this.exportListToolStripMenuItem_Click);
+            this.toObjConvertorToolStripMenuItem.Image = global::PKOModelViewer.Properties.Resources.Export;
+            this.toObjConvertorToolStripMenuItem.Name = "toObjConvertorToolStripMenuItem";
+            this.toObjConvertorToolStripMenuItem.Size = new System.Drawing.Size(125, 20);
+            this.toObjConvertorToolStripMenuItem.Text = "To Obj Convertor";
+            this.toObjConvertorToolStripMenuItem.Click += new System.EventHandler(this.exportListToolStripMenuItem_Click);
+            // 
+            // fromObjConvertorToolStripMenuItem
+            // 
+            this.fromObjConvertorToolStripMenuItem.Image = global::PKOModelViewer.Properties.Resources.Import;
+            this.fromObjConvertorToolStripMenuItem.Name = "fromObjConvertorToolStripMenuItem";
+            this.fromObjConvertorToolStripMenuItem.Size = new System.Drawing.Size(141, 20);
+            this.fromObjConvertorToolStripMenuItem.Text = "From Obj Convertor";
+            this.fromObjConvertorToolStripMenuItem.Click += new System.EventHandler(this.importListToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
-            this.aboutToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.aboutProgramToolStripMenuItem});
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
             this.aboutToolStripMenuItem.Text = "About";
-            // 
-            // aboutProgramToolStripMenuItem
-            // 
-            this.aboutProgramToolStripMenuItem.Name = "aboutProgramToolStripMenuItem";
-            this.aboutProgramToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.aboutProgramToolStripMenuItem.Text = "About program";
-            this.aboutProgramToolStripMenuItem.Click += new System.EventHandler(this.aboutProgramToolStripMenuItem_Click);
-            // 
-            // importListToolStripMenuItem
-            // 
-            this.importListToolStripMenuItem.Name = "importListToolStripMenuItem";
-            this.importListToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.importListToolStripMenuItem.Text = "Import list";
-            this.importListToolStripMenuItem.Click += new System.EventHandler(this.importListToolStripMenuItem_Click);
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
             // textBoxSearch
             // 
-            this.textBoxSearch.Location = new System.Drawing.Point(12, 82);
+            this.textBoxSearch.Location = new System.Drawing.Point(6, 19);
             this.textBoxSearch.Name = "textBoxSearch";
-            this.textBoxSearch.Size = new System.Drawing.Size(124, 20);
+            this.textBoxSearch.Size = new System.Drawing.Size(192, 20);
             this.textBoxSearch.TabIndex = 12;
             this.textBoxSearch.Text = "01010004.lgo";
             // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.textBox1);
+            this.groupBox1.Controls.Add(this.buttonFindFiles);
+            this.groupBox1.Controls.Add(this.buttonLoad);
+            this.groupBox1.Location = new System.Drawing.Point(12, 27);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(253, 77);
+            this.groupBox1.TabIndex = 14;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Client folder";
+            // 
+            // buttonFindFiles
+            // 
+            this.buttonFindFiles.Image = global::PKOModelViewer.Properties.Resources.OpenFolder;
+            this.buttonFindFiles.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.buttonFindFiles.Location = new System.Drawing.Point(6, 45);
+            this.buttonFindFiles.Name = "buttonFindFiles";
+            this.buttonFindFiles.Size = new System.Drawing.Size(241, 23);
+            this.buttonFindFiles.TabIndex = 2;
+            this.buttonFindFiles.Text = "Load client content";
+            this.buttonFindFiles.UseVisualStyleBackColor = true;
+            this.buttonFindFiles.Click += new System.EventHandler(this.buttonFindFiles_Click);
+            // 
+            // buttonLoad
+            // 
+            this.buttonLoad.Image = global::PKOModelViewer.Properties.Resources.SearchFolderOpened;
+            this.buttonLoad.Location = new System.Drawing.Point(204, 17);
+            this.buttonLoad.Name = "buttonLoad";
+            this.buttonLoad.Size = new System.Drawing.Size(43, 23);
+            this.buttonLoad.TabIndex = 1;
+            this.buttonLoad.UseVisualStyleBackColor = true;
+            this.buttonLoad.Click += new System.EventHandler(this.buttonSelectFoler_Click);
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.groupBox2.Controls.Add(this.textBoxSearch);
+            this.groupBox2.Controls.Add(this.button2);
+            this.groupBox2.Controls.Add(this.treeOfFiles);
+            this.groupBox2.Location = new System.Drawing.Point(12, 110);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(253, 362);
+            this.groupBox2.TabIndex = 15;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Client content";
+            // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(142, 80);
+            this.button2.Image = global::PKOModelViewer.Properties.Resources.Search;
+            this.button2.Location = new System.Drawing.Point(204, 18);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(123, 23);
+            this.button2.Size = new System.Drawing.Size(43, 23);
             this.button2.TabIndex = 13;
-            this.button2.Text = "Search";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
+            // contextMenuStrip1
+            // 
+            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.openFolderSelectDialogToolStripMenuItem,
+            this.toolStripSeparator1});
+            this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.Size = new System.Drawing.Size(207, 32);
+            // 
+            // openFolderSelectDialogToolStripMenuItem
+            // 
+            this.openFolderSelectDialogToolStripMenuItem.Name = "openFolderSelectDialogToolStripMenuItem";
+            this.openFolderSelectDialogToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
+            this.openFolderSelectDialogToolStripMenuItem.Text = "Open folder select dialog";
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(203, 6);
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.pictureBox1.Location = new System.Drawing.Point(983, 38);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(38, 38);
+            this.pictureBox1.TabIndex = 9;
+            this.pictureBox1.TabStop = false;
+            this.pictureBox1.Visible = false;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(932, 441);
-            this.Controls.Add(this.button2);
-            this.Controls.Add(this.textBoxSearch);
+            this.ClientSize = new System.Drawing.Size(1042, 484);
+            this.Controls.Add(this.groupBox2);
+            this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.menuStrip1);
-            this.Controls.Add(this.treeOfFiles);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.numericUpDown1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.trackBar1);
             this.Controls.Add(this.richTextBox1);
             this.Controls.Add(this.glControl1);
-            this.Controls.Add(this.textBox1);
-            this.Controls.Add(this.buttonFindFiles);
-            this.Controls.Add(this.buttonLoad);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
-            this.Text = "PKO Model viewer";
+            this.Text = "PKO/TOP Model viewer";
             this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.treeOfFileslvl1NodeMenu.ResumeLayout(false);
             this.treeOfFileslvl0NodeMenu.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
+            this.contextMenuStrip1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -364,14 +435,18 @@
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem chooseDirectoryToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem viewToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem exportListToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem aboutProgramToolStripMenuItem;
         public System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.ToolStripMenuItem importListToolStripMenuItem;
         public System.Windows.Forms.TextBox textBoxSearch;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem openFolderSelectDialogToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem toObjConvertorToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem fromObjConvertorToolStripMenuItem;
     }
 }
 

@@ -1283,19 +1283,6 @@ namespace PKOModelViewer
             }
         }
 
-        private void aboutProgramToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            string message = "You can use this program or it's source codes as you wish, beside used 3rd party libs with own licencies.\n\n" +
-                "Author set no any limits over program's source code usage, share it freely.\n\n" +
-                "Structures used in this program was found in internet and author have no any idea who share it, but feels great respect to that person.\n\n" +
-                "Author ask you to share your modifications of this program for free, same as author did.\n\n" +
-                "Resources program can show or export are right-protected by current rights-owner of \"Pirate King Online\".\n"+
-                "Using resources may trigger copyright issue for you, so be careful, and use it on own risk.\n\n"+
-                "Have a good day, pirates";
-
-            MessageBox.Show(message, "PKO Model Viewer");
-        }
-
         private string oldSearchName = "";
         private int oldIndexSelected = 0;
         private TreeNode[] SearchByStartString(string key, TreeNodeCollection collection)
@@ -1336,6 +1323,25 @@ namespace PKOModelViewer
                     tree.SelectedNode = nodes[oldIndexSelected];
                 }
             }
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            var form = new SupportForm();
+            form.ShowDialog();
+        }
+
+        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string message = "You can use this program or it's source codes as you wish, beside used 3rd party libs with own licencies.\n\n" +
+                "Author set no any limits over program's source code usage, share it freely.\n\n" +
+                "Structures used in this program was found in internet and author have no any idea who share it, but feels great respect to that person.\n\n" +
+                "Author ask you to share your modifications of this program for free, same as author did.\n\n" +
+                "Resources program can show or export are right-protected by current rights-owner of \"Pirate King Online\".\n" +
+                "Using resources may trigger copyright issue for you, so be careful, and use it on own risk.\n\n" +
+                "Have a good day, pirates";
+
+            MessageBox.Show(message, "PKO Model Viewer");
         }
     }
 }

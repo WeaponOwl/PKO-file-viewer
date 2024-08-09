@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.IO;
+using OpenTK;
 
 namespace Mindpower
 {
@@ -1030,6 +1031,90 @@ namespace Mindpower
                 this._LoadBoundingSphereInfo(fp, version);
             return 0;
         }
+
+        int _SaveHelperDummyInfo(System.IO.BinaryWriter fp)
+        {
+            fp.Write(dummy_num);
+            StructReader.WriteStructArray<lwHelperDummyInfo>(fp, dummy_seq);
+
+            return 0;
+        }
+        int _SaveHelperBoxInfo(System.IO.BinaryWriter fp)
+        {
+            fp.Write(box_num);
+            StructReader.WriteStructArray<lwHelperBoxInfo>(fp, box_seq);
+
+            return 0;
+        }
+        int _SaveHelperMeshInfo(System.IO.BinaryWriter fp)
+        {
+            fp.Write(mesh_num);
+
+            for (uint i = 0; i < mesh_num; i++)
+            {
+                fp.Write(mesh_seq[i].id);
+                fp.Write(mesh_seq[i].type);
+                fp.Write(mesh_seq[i].sub_type);
+                fp.Write(mesh_seq[i].name);
+                fp.Write(mesh_seq[i].state);
+                StructReader.WriteStruct<D3DXMATRIX>(fp, mesh_seq[i].mat);
+                StructReader.WriteStruct<lwBox>(fp, mesh_seq[i].box);
+                fp.Write(mesh_seq[i].vertex_num);
+                fp.Write(mesh_seq[i].face_num);
+
+                StructReader.WriteStructArray<D3DXVECTOR3>(fp, mesh_seq[i].vertex_seq);
+                StructReader.WriteStructArray<lwHelperMeshFaceInfo>(fp, mesh_seq[i].face_seq);
+            }
+
+            return 0;
+        }
+        int _SaveBoundingBoxInfo(System.IO.BinaryWriter fp)
+        {
+            fp.Write(bbox_num);
+            StructReader.WriteStructArray<lwBoundingBoxInfo>(fp, bbox_seq);
+            return 0;
+        }
+        int _SaveBoundingSphereInfo(System.IO.BinaryWriter fp)
+        {
+            fp.Write(bsphere_num);
+            StructReader.WriteStructArray<lwBoundingSphereInfo>(fp, bsphere_seq);
+            return 0;
+        }
+
+        public long Save(System.IO.BinaryWriter fp)
+        {
+            //fwrite(&VERSION, sizeof(VERSION), 1, fp);
+
+            fp.Write(type);
+
+            if ((type & 0x1) > 0)
+            {
+                _SaveHelperDummyInfo(fp);
+            }
+
+            if ((type & 0x2) > 0)
+            {
+                _SaveHelperBoxInfo(fp);
+            }
+
+            if ((type & 0x4) > 0)
+            {
+                _SaveHelperMeshInfo(fp);
+            }
+
+            if ((type & 0x10) > 0)
+            {
+                _SaveBoundingBoxInfo(fp);
+            }
+
+            if ((type & 0x20) > 0)
+            {
+                _SaveBoundingSphereInfo(fp);
+            }
+
+            return 0;
+
+        }
     };
 
     [StructLayout(LayoutKind.Sequential,Pack=1)]
@@ -1567,12 +1652,12 @@ namespace Mindpower
                 lwMeshInfo_Save(fp);
             }
 
-            // todo it yourself :p
+            if (header.helper_size > 0)
+            {
+                helper_data.Save(fp);
+            }
 
-            //if (header.helper_size > 0)
-            //{
-            //    helper_data.Save(fp);
-            //}
+            // todo it yourself :p
 
             //if (header.anim_size > 0)
             //{

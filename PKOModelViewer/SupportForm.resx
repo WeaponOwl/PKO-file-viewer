@@ -117,25 +117,17 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <metadata name="folderBrowserDialog1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>17, 17</value>
-  </metadata>
-  <metadata name="timer1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>186, 17</value>
-  </metadata>
-  <metadata name="treeOfFileslvl1NodeMenu.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>273, 17</value>
-  </metadata>
-  <metadata name="treeOfFileslvl0NodeMenu.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>463, 17</value>
-  </metadata>
-  <metadata name="menuStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>653, 17</value>
-  </metadata>
-  <metadata name="contextMenuStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>768, 17</value>
-  </metadata>
-  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>45</value>
-  </metadata>
+  <data name="richTextBox1.Text" xml:space="preserve">
+    <value>In 2014, one of the largest countries decided that it was above international law, and occupied a small part of a neighboring country. The reason for this was banal imperial ambitions - a large country believes that it has power here, and is ready to kill for this belief. People's lives mean nothing to her. The small country was not ready and retreated.
+
+In the same year, the large country tried to cut off another part of someone else's land, but now it encountered resistance. Unexpected resistance and international sanctions forced her to stop, but not to give up her wishes.
+
+After 8 years, there was a full-scale invasion. The small country was given a few days at most before surrender. As I write this text, I have been living in the war for the third year. 
+Russia is killing my people. Destroying my cities. Fire my nature. Erase my culture. Because they thinks they has the right. Russia showed its essence - a remnant of imperial times and an occupier proud of its murders. 
+
+Ukraine will not be able to win this war alone. We are strong, we are proud and ready to fight, but enemy too big. Ukraine is asking for help to push Russia back to where it came from. We prove that it is possible.
+
+You can help by informing, donating or giving up russians. You have no reason to cooperate with them. 
+Russia is a terrorist country. Russia must be held accountable for its crimes.</value>
+  </data>
 </root>
